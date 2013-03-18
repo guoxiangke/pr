@@ -546,6 +546,7 @@ function workflow_admin_ui_state_add_form($form, &$form_state, $wid, $sid = NULL
   }
   // If we don't have a state or db_fetch_array() returned FALSE, load defaults.
   if (!$state || $state === FALSE) {
+    $state = new stdClass();//guo http://drupal.org/node/1702414#comment-6468058
     $state->state = '';
     $state->weight = 0;
     if ($workflow = workflow_get_workflows_by_wid($wid)) {
@@ -753,7 +754,9 @@ function workflow_admin_ui_overview() {
   }
   if ($row) {
     $output = theme('table', array('header' => array(t('Workflow'), t('Operations')), 'rows' => $row));
-    $output .= drupal_render(drupal_get_form('workflow_admin_ui_types_form'));
+    //guo http://drupal.org/node/1400352 
+    $temp_form = drupal_get_form('workflow_admin_ui_types_form');
+    $output .= drupal_render($temp_form);
   }
   else {
     $output = '<p>' . t('No workflows have been added. Would you like to <a href="@link">add a workflow</a>?', array('@link' => url('admin/config/workflow/workflow/add'))) . '</p>';
