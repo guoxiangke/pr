@@ -1,0 +1,77 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ * Approve level settings/PR roles involved
+ */
+function camplus_pr_menu() {
+	$items = array();
+  $items['camplus/pr/settings'] = array(
+    'title' => t('PR settings'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('camplus_pr_settings_form'),
+    'access arguments' => array('access administration pages'),
+    'file' => 'camplus_pr.pages.inc',
+  );
+	$items['camplus/pr/roles_involved'] = array(
+		'title' => t('PR roles involved'),
+		'page callback' => 'drupal_get_form',
+    'page arguments' => array('camplus_pr_roles_involved_settings_form'),
+    'access arguments' => array('access administration pages'),
+		'file' => 'camplus_pr.pages.inc',
+	);
+	//PR range settings
+	$items['camplus/pr/range_settings'] = array(
+		'title' => t('PR range settings'),
+		'page callback' => 'drupal_get_form',
+    'page arguments' => array('camplus_pr_range_settings_form'),
+    'access arguments' => array('access administration pages'),
+		'file' => 'camplus_pr.pages.inc',
+	);
+  $items['camplus/pr/approve_settings'] = array(
+    'title' => t('PR approve workflow settings'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('camplus_pr_approve_settings_form'),
+    'access arguments' => array('access administration pages'),
+    'file' => 'camplus_pr.pages.inc',
+  );
+	return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function camplus_pr_permission() {
+	return array(
+    'camplus purchase request approvable' =>  array(
+      'title' => t('Camplus Purchase Request approvable'),//审批资格 权限
+      'restrict access' => TRUE,
+    ),
+   );
+}
+
+/**
+ * Implements hook_theme().
+ */
+function camplus_pr_theme() {
+  return array(
+    'camplus_pr_roles_involved_settings_form' => array(
+      'render element' => 'form',
+    ), 
+    'camplus_pr_range_settings_form'  => array(
+      'render element' => 'form',
+    ),
+    'camplus_pr_approve_settings_form'  => array(
+      'render element' => 'form',
+    ),            
+  );
+}
+/**
+ * Implements hook_form_alter().
+ */
+function camplus_pr_form_alter(&$form, &$form_state, $form_id) {
+  $forms = array('camplus_pr_range_settings_form','camplus_pr_roles_involved_settings_form');
+	if(in_array($form_id, $forms)){
+    drupal_add_css(drupal_get_path('module', 'camplus_pr').'/camplus_pr.css');
+  }
+}
