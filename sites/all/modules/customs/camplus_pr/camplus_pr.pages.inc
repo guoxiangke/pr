@@ -4,18 +4,25 @@
  */
 function camplus_pr_roles_involved_settings_form($form, &$form_state) {
   $roles = user_roles(TRUE, 'camplus purchase request approvable');
-
+  $count = 0;
+  $camplus_pr_approvable_role_involved = variable_get('camplus_pr_approvable_role_involved','');
+  $default_value = 0;
 	foreach ($roles as $key => $role_name) {
 		if (in_array($role_name, array('administrator'))) continue;
-		// $form[$key]['role_name'] = array('#markup' => check_plain($role_name));
-    $form[$role_name]['approvable_role_weight'][$role_name] = array(
-      '#type' => 'textfield',
-      '#size' => 20, 
-      '#default_value' => variable_get('approvable_role_weight_'.$role_name, '1'),
-    );
+
+    if($camplus_pr_approvable_role_involved){
+      $default_value =  $camplus_pr_approvable_role_involved[$role_name];
+    }
+    $form['involved'][$role_name] =  array(
+        '#type' => 'checkbox',
+        '#title' => $role_name,
+        '#default_value' => $default_value,
+      );
+    $count++;
 	}
-  if(!count($roles)){
-  	$form['empty_text'] = array('#markup' => t('没有可用的角色！请为相关角色添加权限“Camplus Purchase Request approvable”'));
+  $form['a_help'] = array('#markup' => t('注意:一经设置，不可取消,可添加不可删减,请管理员慎重操作!'));
+  if(!$count) {
+  	$form['empty_text'] = array('#markup' => t('没有可用的角色！请为相关角色'.l('添加权限','admin/people/permissions').'“Camplus Purchase Request approvable”'));
   	return $form;
   }
 	// Add the buttons.
@@ -30,17 +37,60 @@ function camplus_pr_roles_involved_settings_form($form, &$form_state) {
 
 function camplus_pr_roles_involved_settings_form_submit($form, &$form_state) {
   $roles = user_roles(TRUE, 'camplus purchase request approvable');
+
   foreach ($form_state['values'] as $role_name => $value) {
     if(in_array($role_name, $roles)) {
-      variable_set('approvable_role_weight_'.$role_name, $value);
+      $camplus_pr_approvable_role_involved[$role_name] = $value;
     }
   }
+  variable_set('camplus_pr_approvable_role_involved',$camplus_pr_approvable_role_involved);
 }
 
+function camplus_pr_roles_weight_settings_form($form, &$form_state) {
+  $roles = user_roles(TRUE, 'camplus purchase request approvable');
+  $count = 0;
+  $camplus_pr_approvable_role_weight = variable_get('camplus_pr_approvable_role_weight','');
+  $default_value = 'NULL';
+  foreach ($roles as $key => $role_name) {
+    if (in_array($role_name, array('administrator'))) continue;
+      if($camplus_pr_approvable_role_weight){
+        $default_value =  $camplus_pr_approvable_role_weight[$role_name];
+      }
+    $form[$role_name]['approvable_role_weight'][$role_name] = array(
+      '#type' => 'textfield',
+      '#size' => 20, 
+      '#default_value' => $default_value,
+    );
+    $count++;
+  }
+
+  if(!$count) {
+    $form['empty_text'] = array('#markup' => t('没有可用的角色！请为相关角色'.l('添加权限','admin/people/permissions').'“Camplus Purchase Request approvable”'));
+    return $form;
+  }
+  // Add the buttons.
+  $form['actions'] = array('#type' => 'actions');
+  $form['actions']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save'),
+    '#weight' => 5,
+  );
+  return  $form;
+}
+
+function camplus_pr_roles_weight_settings_form_submit($form, &$form_state) {
+  $roles = user_roles(TRUE, 'camplus purchase request approvable');
+  foreach ($form_state['values'] as $role_name => $value) {
+    if(in_array($role_name, $roles)) {
+      $camplus_pr_approvable_role_weight[$role_name] = $value;
+    }
+  }
+  variable_set('camplus_pr_approvable_role_weight', $camplus_pr_approvable_role_weight);
+}
 /**
  * Returns HTML
  */
-function theme_camplus_pr_roles_involved_settings_form($variables) {
+function theme_camplus_pr_roles_weight_settings_form($variables) {
   $form = $variables['form'];
   // $errors = form_get_errors() != FALSE ? form_get_errors() : array();
   $rows = array();
@@ -71,13 +121,13 @@ function camplus_pr_range_settings_form() {
    while($i<$range){
       $form[$i]['range']["pr_range_begin_$i"] = array(
         '#type' => 'textfield',
-        '#default_value' =>$range_settings["pr_range_begin_$i"],
+        '#default_value' =>$range_settings[$i]["begin"],
         '#prefix' => 'HK$',
         '#size' => 20, 
       );
       $form[$i]['range']["pr_range_end_$i"] = array(
         '#type' => 'textfield',
-        '#default_value' =>$range_settings["pr_range_end_$i"],
+        '#default_value' =>$range_settings[$i]["end"],
         '#prefix' => 'HK$',
         '#size' => 20, 
       );
@@ -94,12 +144,23 @@ function camplus_pr_range_settings_form() {
 }
 
 function camplus_pr_range_settings_form_submit($form, &$form_state) {
-  dpm($form_state['values']);
+  $pattern = '/\d+/';
+  $return = array();
+
   foreach ($form_state['values'] as $key => $value) {
-    if(strstr($key, 'pr_range_')) {
-      $range_settings[$key] = $form_state['values'][$key];
+    $subject = $key;
+    if(strstr($key, 'pr_range_begin')) {
+      // $range_settings[$key] = $form_state['values'][$key];
+      preg_match($pattern, $subject, $matches);
+      $range_settings[$matches[0]]['begin'] = $form_state['values'][$key];
+    }elseif(strstr($key, 'pr_range_end')) {
+      // $range_settings[$key] = $form_state['values'][$key];
+      preg_match($pattern, $subject, $matches);
+      $range_settings[$matches[0]]['end'] = $form_state['values'][$key];
     }
   }
+
+  dpm($range_settings,'$range_settings');
   variable_set('camplus_pr_range_settings', $range_settings);
 }
 
@@ -144,13 +205,15 @@ function camplus_pr_approve_settings_form() {
   $count_rows =  variable_get('camplus_pr_settings_range', '5');
   $roles = user_roles(TRUE, 'camplus purchase request approvable');
 
+  $camplus_pr_approvable_role_weight = variable_get('camplus_pr_approvable_role_weight','');
+  $camplus_pr_approvable_role_involved = variable_get('camplus_pr_approvable_role_involved','');
   foreach ($roles as $rid => $role_name) {
     if (in_array($role_name, array('administrator'))) continue;
-    $weight = variable_get('approvable_role_weight_'.$role_name);
+    if(!$camplus_pr_approvable_role_involved[$role_name]) continue;
+    $weight = $camplus_pr_approvable_role_weight[$role_name];
     $order[$weight] = array('rid'=>$rid,'name'=>$role_name);
   }
-  ksort($order,SORT_NUMERIC);  
-
+  ksort($order,SORT_NUMERIC);
 
   $workflow_settings = variable_get('camplus_pr_workflow_settings', '');
   for($i = 1; $i <= $count_rows; $i++) {
@@ -192,9 +255,12 @@ function theme_camplus_pr_approve_settings_form($variables) {
   $count_rows =  variable_get('camplus_pr_settings_range', '5');
   $roles = user_roles(TRUE, 'camplus purchase request approvable');
 
+  $camplus_pr_approvable_role_weight = variable_get('camplus_pr_approvable_role_weight','');
+  $camplus_pr_approvable_role_involved = variable_get('camplus_pr_approvable_role_involved','');
   foreach ($roles as $rid => $role_name) {
     if (in_array($role_name, array('administrator'))) continue;
-    $weight = variable_get('approvable_role_weight_'.$role_name);
+    if(!$camplus_pr_approvable_role_involved[$role_name]) continue;
+    $weight = $camplus_pr_approvable_role_weight[$role_name];
     $order[$weight] = array('rid'=>$rid,'name'=>$role_name);
   }
   ksort($order,SORT_NUMERIC);  
@@ -203,8 +269,8 @@ function theme_camplus_pr_approve_settings_form($variables) {
 
   for($i = 1; $i <= $count_rows; $i++) {
     $row = array();
-    $j = $i-1;
-    $row[] = $range_settings["pr_range_begin_$j"] .'--'. $range_settings["pr_range_end_$j"];
+    $j = $i-1;//$range_settings[$i]["begin"],
+    $row[] = $range_settings[$i-1]["begin"] .'--'. $range_settings[$i-1]["end"].'(HK$)';
     foreach ($order as $key => $role) {
       $row[] = drupal_render($form[$i][$i.'-workflow-'.$role['rid']]);
     }

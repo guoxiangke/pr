@@ -20,6 +20,13 @@ function camplus_pr_menu() {
     'access arguments' => array('access administration pages'),
 		'file' => 'camplus_pr.pages.inc',
 	);
+  $items['camplus/pr/roles_weight'] = array(
+    'title' => t('PR roles weight'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('camplus_pr_roles_weight_settings_form'),
+    'access arguments' => array('access administration pages'),
+    'file' => 'camplus_pr.pages.inc',
+  );
 	//PR range settings
 	$items['camplus/pr/range_settings'] = array(
 		'title' => t('PR range settings'),
@@ -55,7 +62,7 @@ function camplus_pr_permission() {
  */
 function camplus_pr_theme() {
   return array(
-    'camplus_pr_roles_involved_settings_form' => array(
+    'camplus_pr_roles_weight_settings_form' => array(
       'render element' => 'form',
     ), 
     'camplus_pr_range_settings_form'  => array(
@@ -74,4 +81,46 @@ function camplus_pr_form_alter(&$form, &$form_state, $form_id) {
 	if(in_array($form_id, $forms)){
     drupal_add_css(drupal_get_path('module', 'camplus_pr').'/camplus_pr.css');
   }
+}
+
+function camplus_pr_approve_flag_generate($key) {
+  $flags = array();
+  // Exported flag: "Bookmarks".
+  $flags[$key] = array (
+    'content_type' => 'node',
+    'title' => 'Approve',
+    'global' => '0',
+    'types' => 
+      array (
+        0 => 'purchase_request',
+      ),
+    'flag_short' => 'Approve this PR',
+    'flag_long' => 'Approve this Purchase Request',
+    'flag_message' => 'This Purchase Request has been Approved',
+    'unflag_short' => 'Unbookmark this',
+    'unflag_long' => 'Remove this post from your bookmarks',
+    'unflag_message' => 'This post has been removed from your bookmarks',
+    'unflag_denied_text' => '',
+    'link_type' => 'toggle',
+    'roles' => 
+      array (
+        'flag' => 
+        array (
+          0 => 2,
+        ),
+        'unflag' => 
+        array (
+          0 => 2,
+        ),
+      ),
+    'weight' => 0,
+    'show_on_form' => 1,
+    'access_author' => '',
+    'show_on_page' => 1,
+    'show_on_teaser' => 1,
+    'show_contextual_link' => false,
+    'i18n' => 0,
+    'api_version' => 2,
+  );
+  return $flags;
 }
