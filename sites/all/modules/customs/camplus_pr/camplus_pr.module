@@ -6,41 +6,67 @@
  */
 function camplus_pr_menu() {
 	$items = array();
-  $items['camplus/pr/settings'] = array(
+  $items['admin/config/camplus'] = array(
+    'title' => 'Education Groupware',
+    'position' => 'left',
+    'weight' => -20,
+    'page callback' => 'system_admin_menu_block_page',
+    'access arguments' => array('access administration pages'),
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
+  );
+  $items['admin/config/camplus/pr_settings'] = array(
     'title' => t('PR settings'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('camplus_pr_settings_form'),
     'access arguments' => array('access administration pages'),
     'file' => 'camplus_pr.pages.inc',
   );
-	$items['camplus/pr/roles_involved'] = array(
+  $items['admin/config/camplus/pr_settings/rang_count'] = array(
+    'title' => t('PR settings rang count'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('camplus_pr_settings_form'),
+    'access arguments' => array('access administration pages'),
+    'file' => 'camplus_pr.pages.inc',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' =>-28,
+  );
+	$items['admin/config/camplus/pr_settings/roles_involved'] = array(
 		'title' => t('PR roles involved'),
 		'page callback' => 'drupal_get_form',
     'page arguments' => array('camplus_pr_roles_involved_settings_form'),
     'access arguments' => array('access administration pages'),
 		'file' => 'camplus_pr.pages.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' =>-30,
 	);
-  $items['camplus/pr/roles_weight'] = array(
+  $items['admin/config/camplus/pr_settings/roles_weight'] = array(
     'title' => t('PR roles weight'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('camplus_pr_roles_weight_settings_form'),
     'access arguments' => array('access administration pages'),
     'file' => 'camplus_pr.pages.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' =>-29,
   );
 	//PR range settings
-	$items['camplus/pr/range_settings'] = array(
+	$items['admin/config/camplus/pr_settings/range_settings'] = array(
 		'title' => t('PR range settings'),
 		'page callback' => 'drupal_get_form',
     'page arguments' => array('camplus_pr_range_settings_form'),
     'access arguments' => array('access administration pages'),
 		'file' => 'camplus_pr.pages.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' =>-27,
 	);
-  $items['camplus/pr/approve_settings'] = array(
+  $items['admin/config/camplus/pr_settings/pr_approve_settings'] = array(
     'title' => t('PR approve workflow settings'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('camplus_pr_approve_settings_form'),
     'access arguments' => array('access administration pages'),
     'file' => 'camplus_pr.pages.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' =>-26,
   );
 	return $items;
 }

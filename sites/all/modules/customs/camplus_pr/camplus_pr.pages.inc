@@ -270,14 +270,14 @@ function theme_camplus_pr_approve_settings_form($variables) {
   for($i = 1; $i <= $count_rows; $i++) {
     $row = array();
     $j = $i-1;//$range_settings[$i]["begin"],
-    $row[] = $range_settings[$i-1]["begin"] .'--'. $range_settings[$i-1]["end"].'(HK$)';
+    $row[] = $range_settings[$i-1]["begin"] .'--'. $range_settings[$i-1]["end"];
     foreach ($order as $key => $role) {
       $row[] = drupal_render($form[$i][$i.'-workflow-'.$role['rid']]);
     }
     $row = array('data' => $row);
     $rows[] = $row;
   }
-  $header[] = 'Range';
+  $header[] = 'Range'.'(HK$)';
   foreach ($order as $key => $role) {
     $header[] = $role['name'];
   }

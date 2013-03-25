@@ -7,34 +7,37 @@ function rate_pr_node_view($node, $view_mode, $langcode) {
   if ($view_mode != 'rss') {  
     // Adding the form to the node view
     $widgets = rate_get_active_widgets('node', $node->type, $view_mode);
-
-  	_rate_pr_check_permissions($node, $widgets);
-
     foreach ($widgets as $widget_id => $widget) {
-      if( $widget->name = 'approve') {
+    	//没有权限时，清楚rate
+      if( $widget->name == 'approve' && !_rate_pr_check_permissions($node)) {
       	// 根据PR节点的总额确定which审批流程
       	// 在上一个审批流程没有确定前 其他后续
 
         $widget_name = 'rate_' . $widget->name;
-        _rate_check_widget($widget);
-        $display_mode = $view_mode == 'teaser' ? $widget->teaser_display_mode : $widget->node_display_mode;
-        $widget_code = array(
-          '#weight' => $widget->node_display == RATE_DISPLAY_ABOVE_CONTENT ? -50 : 50,
-          '#markup' => rate_generate_widget($widget_id, 'node', $node->nid, $display_mode),
-        );
+        // _rate_check_widget($widget);
+        // $display_mode = $view_mode == 'teaser' ? $widget->teaser_display_mode : $widget->node_display_mode;
+        // $widget_code = array(
+        //   '#weight' => $widget->node_display == RATE_DISPLAY_ABOVE_CONTENT ? -50 : 50,
+        //   '#markup' => rate_generate_widget($widget_id, 'node', $node->nid, $display_mode),
+        // );
         if ($widget->node_display == RATE_DISPLAY_DISABLE) {
-          $node->$widget_name = $widget_code;
+          // $node->$widget_name = $widget_code;  && $show_approve_vote
+          unset($node->$widget_name);
         }
         else {
-          $node->content[$widget_name] = $widget_code;
+        	unset($node->content[$widget_name]);
+          // $node->content[$widget_name] = $widget_code;
         }
+
       }
 
     }
   }
 }
 
-function _rate_pr_check_permissions($node, $widgets, $user = NULL) {
+function _rate_pr_check_permissions($node, $user = NULL) {
+	if($node->type != 'purchase_request') return FALSE;
+	if(!$user) global $user;
 	if(!_approve_rate_check($node, $user)) {
 		//通过审批流程确定第X级用户，并确定权限
 		$field_chosen_price = $node->field_chosen_price[LANGUAGE_NONE][0]['value'];
@@ -45,21 +48,41 @@ function _rate_pr_check_permissions($node, $widgets, $user = NULL) {
 		//  	$count_rows--;
 		//  }
   	$camplus_pr_range_settings = variable_get('camplus_pr_range_settings');
-  	dvm($total,'123');
-  	$max = 0;
-  	$i = 0;
-  	dpm($camplus_pr_range_settings);
+
   	foreach ($camplus_pr_range_settings as $key => $value) {
-  		if($value-$total >= 0) {
-  			$temp = $key;
-  			dpm($value-$total,$i);
-  			// $max = $camplus_pr_range_settings[$key];
-  			// dvm($key.'-'.$value);
+  		if($value['end']-$total >= 0) {
+  			$pr_approve_setting = $key+1;
   			break;
   		}
-  		$i++;
   	}
+  	$workflow_settings = variable_get('camplus_pr_workflow_settings', '');
+  	dpm($workflow_settings  ,$pr_approve_setting);
+  	$camplus_pr_approvable_role_involved = array_keys(variable_get('camplus_pr_approvable_role_involved'));
+  	// dpm( array_keys(variable_get('camplus_pr_approvable_role_involved')),'camplus_pr_approvable_role_involved');
+  	$flag_role_involved = FALSE;
+  	foreach ($user->roles as $key => $value) {
+  		if (in_array($value, $camplus_pr_approvable_role_involved)) {
+  			$rid = $key;
+  			$role = $value;
+  			$flag_role_involved = TRUE;
+  			break;
+  		}
+  	}
+  	if($role == 'head') {
+  		//TODO: og check if user is the department head.
+
+  	}
+  	if($flag_role_involved && isset($workflow_settings[$pr_approve_setting.'-workflow-'.$rid])) {
+  		dpm('TRUE');
+  		return $workflow_settings[$pr_approve_setting.'-workflow-'.$rid];
+  	}else{	dpm('FALSE');
+			return FALSE;
+  	}
+
+  	return $workflow_settings[$pr_approve_setting.'-workflow-'.$rid];
+
 	}else {
+		dpm('has value already in db!means has permission');
 		return TRUE;
 	}
 }
