@@ -90,7 +90,7 @@ function _rate_pr_check_permissions($node, $widget, $user = NULL) {
   if($rate_results['options']['-1']) {   //attention -1,can not change.
   //即有人选择reject，审核不通过
     $approve_status['workflow_status'] = FALSE;
-     dpm('即有人选择reject，审核不通过');
+     dpm('审核不通过,即有人选择reject');
   }elseif($rate_results['options']['1'] == count(array_filter($workflow_settings))){//all choosed approve,审核通过
     $approve_status['workflow_status'] = TRUE;
      dpm('审核通过');
@@ -98,16 +98,21 @@ function _rate_pr_check_permissions($node, $widget, $user = NULL) {
      $approve_status['workflow_status'] = 'pending';
      dpm('审核中');
   }
-  
+
   //用户已经投票/审批过，即有权限
   if(isset($rate_results['user_vote'])) {
     $approve_status['status'] = $rate_results['user_vote'];
     $approve_status['permit_flag'] = TRUE;
     return $approve_status;
   }else {//进一步判定 用户尚未投票/审批，且有相应角色，需要根据审核流程判断是否此时有资格看到rate
-    dpm($workflow_settings  ,$approve_rang);
+    dpm($workflow_settings, $approve_rang);
+
+    $camplus_pr_approvable_role_weight = variable_get('camplus_pr_approvable_role_weight','');
+    dpm($camplus_pr_approvable_role_weight,'camplus_pr_approvable_role_weight');
+
+
     //head: Department specific role. 需要判断是否属于该部门，即使IT部门的header吗？
-    if($role == 'head') { 
+    if($role == 'head') { // usually the first level of approve.
       //TODO: og check if user is the department head.
       // og_get_membership($group_type='node', $gid, $entity_type='node', $etid=$node->nid)
       $bi_nid = $node->og_group_ref[LANGUAGE_NONE][0]['target_id'];
@@ -119,7 +124,22 @@ function _rate_pr_check_permissions($node, $widget, $user = NULL) {
 
       dvm($flag_role_involved,'true means the header is member of the right department has permission to vote');
     }else { // other roles, Non-Department specific.
+      $camplus_pr_approvable_role_weight = variable_get('camplus_pr_approvable_role_weight','');
+      dpm($camplus_pr_approvable_role_weight);
+      asort($camplus_pr_approvable_role_weight);
+      foreach ($camplus_pr_approvable_role_weight  as $role_name => $role_weight) {
+        if($role_name !='head') {
+          $rid = user_role_load_by_name($role_name)->rid;
+          if( $workflow_settings[$rid]) {
+            dpm($role_name.'has right to check/approve ');
+            //TODO: and then check have to follow others rate.
 
+
+          }else{
+          dpm($role_name.'has no! right to check/approve ');
+          }
+        }
+      }
     }
     $approve_status['permit_flag'] =$flag_role_involved;
     return $approve_status;
