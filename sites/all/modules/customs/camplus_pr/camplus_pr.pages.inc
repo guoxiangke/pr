@@ -216,11 +216,12 @@ function camplus_pr_approve_settings_form() {
   ksort($order,SORT_NUMERIC);
 
   $workflow_settings = variable_get('camplus_pr_workflow_settings', '');
-  for($i = 1; $i <= $count_rows; $i++) {
+  dpm($workflow_settings);
+  for($i = 0; $i < $count_rows; $i++) {
     foreach ($order as $key => $role) {
       $default_value = 0;
-      if(isset($workflow_settings[$i.'-workflow-'.$role['rid']])){
-        $default_value =  $workflow_settings[$i.'-workflow-'.$role['rid']];
+      if(isset($workflow_settings[$i][$role['rid']])) {
+        $default_value = $workflow_settings[$i][$role['rid']];
       }
       $form[$i][$i.'-workflow-'.$role['rid']] = array(
         '#type' => 'checkbox',
@@ -240,12 +241,25 @@ function camplus_pr_approve_settings_form() {
 }
 
 function camplus_pr_approve_settings_form_submit($form, &$form_state) {
+  // foreach ($form_state['values'] as $key => $value) {
+  //   if(strstr($key, '-workflow-')) {
+  //     $workflow_settings[$key] = $form_state['values'][$key];
+  //   }
+  // }
+
   foreach ($form_state['values'] as $key => $value) {
+    $subject = $key;
     if(strstr($key, '-workflow-')) {
-      $workflow_settings[$key] = $form_state['values'][$key];
+      // $range_settings[$key] = $form_state['values'][$key];
+      preg_match('/\d+-/', $subject, $matches);
+      $index = str_replace('-', '', $matches[0]);
+      preg_match('/-\d+/', $subject, $matches);
+      $rid = str_replace('-', '', $matches[0]);
+      $workflow_settings[$index][$rid] = $form_state['values'][$key];
     }
   }
   variable_set('camplus_pr_workflow_settings', $workflow_settings);
+
 }
 
 function theme_camplus_pr_approve_settings_form($variables) {
@@ -267,10 +281,9 @@ function theme_camplus_pr_approve_settings_form($variables) {
 
  $range_settings =  variable_get('camplus_pr_range_settings');
 
-  for($i = 1; $i <= $count_rows; $i++) {
+  for($i = 0; $i < $count_rows; $i++) {
     $row = array();
-    $j = $i-1;//$range_settings[$i]["begin"],
-    $row[] = $range_settings[$i-1]["begin"] .'--'. $range_settings[$i-1]["end"];
+    $row[] = $range_settings[$i]["begin"] .'--'. $range_settings[$i]["end"];
     foreach ($order as $key => $role) {
       $row[] = drupal_render($form[$i][$i.'-workflow-'.$role['rid']]);
     }

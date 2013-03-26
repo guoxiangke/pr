@@ -680,7 +680,6 @@ function rate_widget_form_submit($form, &$form_state) {
   }
   $widgets[$id] = $widget;
   variable_set(RATE_VAR_WIDGETS, $widgets);
-  dpm(variable_get(RATE_VAR_WIDGETS));
   drupal_set_message(t('The widget has been saved.'));
 
   $form_state['redirect'] = RATE_PATH_ADMIN_PAGE;
