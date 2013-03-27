@@ -110,8 +110,8 @@ function theme_camplus_pr_roles_weight_settings_form($variables) {
   $header = array(t('Role'), t('Weight for approvable role'));
   $output = theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('id' => 'approvable_role')));
   $output .= drupal_render_children($form);
-
-  return $output;
+  $warning = '<div class="messages warning">The first role(Min number weight) must be The Department specific role. </div>';
+  return $warning . $output;
 }
 
 function camplus_pr_range_settings_form() {

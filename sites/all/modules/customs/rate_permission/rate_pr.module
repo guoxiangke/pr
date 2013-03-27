@@ -105,16 +105,19 @@ function _rate_pr_check_permissions($node, $widget, $user = NULL) {
     $approve_status['permit_flag'] = TRUE;
     return $approve_status;
   }else {//进一步判定 用户尚未投票/审批，且有相应角色，需要根据审核流程判断是否此时有资格看到rate
-    dpm($workflow_settings, $approve_rang);
-
+    dpm($workflow_settings);
     $camplus_pr_approvable_role_weight = variable_get('camplus_pr_approvable_role_weight','');
-    dpm($camplus_pr_approvable_role_weight,'camplus_pr_approvable_role_weight');
-
-
+    dpm($camplus_pr_approvable_role_weight);
+    // asort($camplus_pr_approvable_role_weight);
+    $camplus_pr_approvable_role_weight_flip = array_flip($camplus_pr_approvable_role_weight);
+    ksort($camplus_pr_approvable_role_weight_flip);
+    dpm($camplus_pr_approvable_role_weight_flip);
+    $first_head = current($camplus_pr_approvable_role_weight_flip);//head first role, Department specific role. 
+    $first_roles = user_role_load_by_name($first_head);
     //head: Department specific role. 需要判断是否属于该部门，即使IT部门的header吗？
-    if($role == 'head') { // usually the first level of approve.
+    if($role == $first_head) { //'head' usually the first level of approve.
       //TODO: og check if user is the department head.
-      // og_get_membership($group_type='node', $gid, $entity_type='node', $etid=$node->nid)
+      // og_get_memrship($group_type='node', $gid, $entity_type='node', $etid=$node->nid)
       $bi_nid = $node->og_group_ref[LANGUAGE_NONE][0]['target_id'];
       $department_nid = node_load($bi_nid)->field_parents_department[LANGUAGE_NONE][0]['target_id'];
       $department_node = node_load($department_nid);
@@ -123,25 +126,72 @@ function _rate_pr_check_permissions($node, $widget, $user = NULL) {
       $approve_status['permit_flag'] = $flag_role_involved;
 
       dvm($flag_role_involved,'true means the header is member of the right department has permission to vote');
-    }else { // other roles, Non-Department specific.
-      $camplus_pr_approvable_role_weight = variable_get('camplus_pr_approvable_role_weight','');
-      dpm($camplus_pr_approvable_role_weight);
-      asort($camplus_pr_approvable_role_weight);
-      foreach ($camplus_pr_approvable_role_weight  as $role_name => $role_weight) {
-        if($role_name !='head') {
-          $rid = user_role_load_by_name($role_name)->rid;
-          if( $workflow_settings[$rid]) {
-            dpm($role_name.'has right to check/approve ');
-            //TODO: and then check have to follow others rate.
+    }else { //if($role != $first_head)  // other roles, Non-Department specific.
+      dpm($role,'my involed role '.$rid);
+      // $rid = user_role_load_by_name($role_name)->rid;
+      if($workflow_settings[$rid]) { //判定workflow是否设置该部门审核
+        if($rate_results['count'] == 0) {//no rates.
+          $approve_status['permit_flag'] = FALSE;
+          dpm($role .' has no! right to check/approve AS the workflow settings,for no one before has rate.:没有权限审核，需等待之前的部门先审核。现在该PR没有任何人审核!');
+          return $approve_status;
+        }else {
+          //只要之前部门，有一个不同意，本部门将看不到rate
+          //之前部门，都同意，本部门才能看rate
 
 
-          }else{
-          dpm($role_name.'has no! right to check/approve ');
+         
+          // delete the first role which is  Department specific
+
+          dpm($camplus_pr_approvable_role_weight,'role_weight');
+          dpm(array_filter($workflow_settings));
+          dpm($first_roles,'fist');
+
+          $before_role_counts = 0;
+          foreach (array_filter($workflow_settings) as $w_rid => $value) {
+            if( $w_rid == $rid ){break;}
+              $before_role_counts ++;
           }
+          dpm( $rid.' '.$role.' 上面还有'.$before_role_counts.'级部门&&已经有'.$rate_results['options']['1'].'个部门同意了。');
+          foreach (array_filter($workflow_settings) as $w_rid => $value) {
+            if($w_rid == $first_roles->rid) continue;
+            $other_roles = user_role_load($w_rid);
+            //之前部门
+            if ($camplus_pr_approvable_role_weight[$role] > $camplus_pr_approvable_role_weight[$other_roles->name]) {
+              dpm( $rid.' '.$role.' 的上面还有de部门是 '.$w_rid .' '. $other_roles->name);
+              //只有1个，说明只要head部门审核了。
+              if($rate_results['count'] == 1) {
+                $approve_status['permit_flag'] = FALSE;
+                dpm($role .' has no! right to check/approve AS the workflow settings,没有权限审核，需等待之前的部门先审核。现在该PR只有header审核guo!等待'.$other_roles->name.'审批');
+                return $approve_status;
+              }else {
+                //都选择同意&& 数量一致
+                if($rate_results['count'] == $rate_results['options']['1'] && $rate_results['count'] == $before_role_counts){
+                  // true
+                }else{
+                  $approve_status['permit_flag'] = FALSE;
+                  dpm($role .' has no! right to check/approve AS the workflow settings,:没有权限审核，需等待之前的部门先审核!');
+                  return $approve_status;
+                }
+
+              }
+            }
+          }
+
+          dpm($role .' has right to check/approve,,rate_results: '.$rate_results['count']);
+
         }
+        //TODO: and then check others before has approve or not.
+
+
+      }else{
+        $approve_status['permit_flag'] = FALSE;
+        // $flag_role_involved = FALSE;
+        dpm($role .' has no! right to check/approve AS the workflow settings');
+        return $approve_status;
       }
     }
-    $approve_status['permit_flag'] =$flag_role_involved;
+
+    $approve_status['permit_flag'] = $flag_role_involved;
     return $approve_status;
   }
 
