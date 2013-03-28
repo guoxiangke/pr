@@ -11,7 +11,7 @@ function camplus_pr_menu() {
     'position' => 'left',
     'weight' => -20,
     'page callback' => 'system_admin_menu_block_page',
-    'access arguments' => array('access administration pages'),
+    'access arguments' => array('camplus bi settings'),
     'file' => 'system.admin.inc',
     'file path' => drupal_get_path('module', 'system'),
   );
@@ -19,14 +19,14 @@ function camplus_pr_menu() {
     'title' => t('PR settings'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('camplus_pr_settings_form'),
-    'access arguments' => array('access administration pages'),
+    'access arguments' => array('camplus bi settings'),
     'file' => 'camplus_pr.pages.inc',
   );
   $items['admin/config/camplus/pr_settings/rang_count'] = array(
     'title' => t('PR settings rang count'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('camplus_pr_settings_form'),
-    'access arguments' => array('access administration pages'),
+    'access arguments' => array('camplus bi settings'),
     'file' => 'camplus_pr.pages.inc',
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'weight' =>-28,
@@ -35,7 +35,7 @@ function camplus_pr_menu() {
 		'title' => t('PR roles involved'),
 		'page callback' => 'drupal_get_form',
     'page arguments' => array('camplus_pr_roles_involved_settings_form'),
-    'access arguments' => array('access administration pages'),
+    'access arguments' => array('camplus bi settings'),
 		'file' => 'camplus_pr.pages.inc',
     'type' => MENU_LOCAL_TASK,
     'weight' =>-30,
@@ -44,7 +44,7 @@ function camplus_pr_menu() {
     'title' => t('PR roles weight'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('camplus_pr_roles_weight_settings_form'),
-    'access arguments' => array('access administration pages'),
+    'access arguments' => array('camplus bi settings'),
     'file' => 'camplus_pr.pages.inc',
     'type' => MENU_LOCAL_TASK,
     'weight' =>-29,
@@ -54,7 +54,7 @@ function camplus_pr_menu() {
 		'title' => t('PR range settings'),
 		'page callback' => 'drupal_get_form',
     'page arguments' => array('camplus_pr_range_settings_form'),
-    'access arguments' => array('access administration pages'),
+    'access arguments' => array('camplus bi settings'),
 		'file' => 'camplus_pr.pages.inc',
     'type' => MENU_LOCAL_TASK,
     'weight' =>-27,
@@ -63,14 +63,21 @@ function camplus_pr_menu() {
     'title' => t('PR approve workflow settings'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('camplus_pr_approve_settings_form'),
-    'access arguments' => array('access administration pages'),
+    'access arguments' => array('camplus bi settings'),
     'file' => 'camplus_pr.pages.inc',
     'type' => MENU_LOCAL_TASK,
     'weight' =>-26,
   );
+  $items['admin/people/advanced_management/budget/settings'] = array(
+    'title' => 'Budget settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('camplus_pr_budget_settings_form'),
+    'access arguments' => array('camplus budget settings'),
+    'weight' => 7,
+    'type' => MENU_LOCAL_TASK,
+  );
 	return $items;
 }
-
 /**
  * Implements hook_permission().
  */
@@ -80,7 +87,207 @@ function camplus_pr_permission() {
       'title' => t('Camplus Purchase Request approvable'),//审批资格 权限
       'restrict access' => TRUE,
     ),
+    'camplus budget settings' =>  array(
+      'title' => t('Camplus BI Settings'),//书记 权限 预算设置
+      'restrict access' => TRUE,
+    ),
    );
+}
+function camplus_pr_budget_settings_form() {
+  $public_groups = druedu_user_get_nodes_by_group('school_department');
+  foreach ($public_groups as $g_nid => $g_node) {
+    $groups[$g_nid]['gid'] = $g_nid;
+    $groups[$g_nid]['depth'] = 0;
+    $groups[$g_nid]['parent'] = 0;
+    $groups[$g_nid]['type'] = 'school_department';
+    $groups[$g_nid]['name'] = $g_node->title; 
+    //($grade, $subject = null, $class = null, $grade_group_content = 'subject', $subject_group_content = 'class')
+    $all_subjects_node = druedu_user_get_nodes_by_group($g_nid, $subject = null, $class = null, $grade_group_content = 'budget_item');
+    foreach ($all_subjects_node as $s_nid => $s_node) {
+      $groups[$s_nid]['gid'] = $s_nid;
+      $groups[$s_nid]['depth'] = 1;
+      $groups[$s_nid]['parent'] = $g_nid;
+      $groups[$g_nid]['type'] = 'budget_item';
+      $groups[$s_nid]['name'] = $s_node->title;
+    }
+  }
+
+  $form['#tree'] = TRUE;
+  $form['groups'] = array(
+    '#tree' => TRUE,
+  );
+
+  $order = 1;
+  if(isset($groups['-1']))unset($groups['-1']);
+  foreach ($groups as $gid => $group) {
+      $form['groups'][$gid]['gid'] = array(
+        '#type' => 'hidden',
+        '#value' => $groups[$gid]['gid'],
+      );
+      $form['groups'][$gid]['parent'] = array(
+        '#type' => 'hidden',
+        // Yes, default_value on a hidden. It needs to be changeable by the javascript.
+        '#default_value' => $groups[$gid]['parent'],
+      );
+      $form['groups'][$gid]['depth'] = array(
+        '#type' => 'hidden',
+        // Same as above, the depth is modified by javascript, so it's a default_value.
+        '#default_value' =>  $groups[$gid]['depth'],
+      );
+      $form['groups'][$gid]['title'] = array(
+        '#type' => 'hidden',
+        // Same as above, the depth is modified by javascript, so it's a default_value.
+        '#default_value' =>   $groups[$gid]['name'],
+      );
+
+    $form['groups'][$gid]['#group'] = $groups[$gid];
+    $form['groups'][$gid]['#weight'] = $order;
+    $form['groups'][$gid]['weight'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Weight for @title', array('@title' => $group['name'])),
+      '#title_display' => 'invisible',
+      '#size' => 4,
+      '#default_value' => $order,
+      '#attributes' => array('class' => array('role-weight')),
+    );
+    $order++;
+
+  }
+  return $form;
+}
+
+
+
+/**
+ * Returns HTML for the role order and new role form.
+ *
+ * @param $variables
+ *   An associative array containing:
+ *   - form: A render element representing the form.
+ *
+ * @ingroup themeable
+ */
+function theme_camplus_pr_budget_settings_form($variables) {
+  $form = $variables['form'];
+  $header = array(
+    t('Budget item'),
+    t('Weight'),
+    t('Amount'),
+    t('已批支出'),
+    t('待批支出'),
+    t('预算余额'),
+    t('Allowance'),
+    t('max余额'),
+    t('Mixable Key'),
+    t('通用余额'),
+    t('Operations')
+    // array('data' => , 'colspan' => 2)
+    );
+
+  foreach (element_children($form['groups']) as $key=>$gid) {
+
+    $group = &$form['groups'][$gid];
+    $name = $group['#group']['name'];
+    $row = array();
+    $node = node_load($gid);
+    {//in_array($gid, array(DRUPAL_ANONYMOUS_RID, DRUPAL_AUTHENTICATED_RID))
+     
+
+      $row[] = (isset($group['#group']['depth']) && $group['#group']['depth'] > 0 ? theme('indentation', array('size' => $group['#group']['depth'])) : ''). t('@name', array('@name' => $name));
+
+      $group['gid']['#attributes']['class'] = array('group-id');
+      $group['parent']['#attributes']['class'] = array('group-parent');
+      $group['depth']['#attributes']['class'] = array('group-depth');
+
+      $row[0] .= drupal_render($group['parent']) . drupal_render($group['gid']) . drupal_render($group['depth']);
+      //$group['weight']['#attributes']['class'] = array('term-weight');
+      $form['groups'][$gid]['weight']['#attributes']['class'] = array('group-weight');
+      $row[] = drupal_render($form['groups'][$gid]['weight']);
+      if($node->type == 'budget_item'){
+        if(isset($node->field_pr_budget[LANGUAGE_NONE])) {
+          $field_pr_budget = $node->field_pr_budget[LANGUAGE_NONE][0]['value'];
+          $row[] = $field_pr_budget;
+        }else{ 
+          $field_pr_budget = 0;
+          $row[] = '-';
+        }
+       //已批支出 get all PRs
+         $prs = druedu_user_get_nodes_by_group($gid, $subject = null, $class = null, $grade_group_content = 'purchase_request');
+         $pending = 0;
+         $approved = 0;
+         $rejectd = 0;
+         // get  approved appending and rejectd
+         foreach ($prs as $nid => $pr_node) {
+           $widgets = rate_get_active_widgets('node', $pr_node->type);
+            foreach ($widgets as $widget_id => $widget) {
+              if($widget->name == 'approve'){
+                $widget->id = $widget_id;
+                $approve_status = _rate_pr_check_permissions($pr_node,$widget);
+                switch ($approve_status['workflow_status']) {
+                  case 'pending':
+                    $pending += $pr_node->field_chosen_price[LANGUAGE_NONE][0]['value'];
+                    break;
+                  case 'approved':
+                    $approved += $pr_node->field_chosen_price[LANGUAGE_NONE][0]['value'];
+                    break;
+                  default: //rejectd FALSE
+                    $rejectd += $pr_node->field_chosen_price[LANGUAGE_NONE][0]['value'];
+                    break;
+                }
+                break;
+              }else{
+                continue;
+              }
+            }
+         }
+        $row[] = sprintf("%01.2f", $approved);
+
+        $row[] = sprintf("%01.2f", $pending);
+        $row_d = $field_pr_budget - $approved - $pending;
+        $row[] = sprintf("%01.2f", $field_pr_budget - $approved - $pending);// '预算余额';
+        if(isset($node->field_pr_allowance[LANGUAGE_NONE])) {
+          $row_e = $node->field_pr_allowance[LANGUAGE_NONE][0]['value'];
+          $row[] = $row_e;
+        }else{
+          $row_e = 0;
+          $row[] = '-';
+        }
+        $row[] = sprintf("%01.2f", $row_d + $row_e);
+        if(isset($node->field_mixable_key[LANGUAGE_NONE])) {
+          $row[] = $node->field_mixable_key[LANGUAGE_NONE][0]['value'];
+        }else{
+          $row[] = '-';
+        }
+        $row[] ='通用余额';
+        $row[] = l(t('setting'), 'node/' . $gid.'/edit');
+      }else {
+        $row[] ='';//Amount
+        $row[] ='';//已批支出
+        $row[] ='';//待批支出
+        $row[] ='';//预算余额
+        $row[] ='';//Allowance
+        $row[] ='';//max余额
+        $row[] ='';//Mixable Key
+        $row[] ='';//通用余额
+        $row[] ='';//l(t('edit'), 'node/' . $gid.'/edit');
+      }
+
+      $rows[$gid] = array('data' => $row, 'class' => array('draggable','locked'));
+    }
+  }
+    
+  // Add drag and drop if parent fields are present in the form.
+    drupal_add_tabledrag('groups_tree', 'match', 'parent', 'group-parent', 'group-parent', 'group-id', FALSE);
+    drupal_add_tabledrag('groups_tree', 'depth', 'group', 'group-depth', NULL, NULL, FALSE);
+    drupal_add_tabledrag('groups_tree', 'order', 'sibling', 'group-weight');
+    drupal_add_js(drupal_get_path('module', 'druedu_user_tree') . '/druedu_user_tree.js');
+  
+ 
+
+  $output = theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('id' => 'groups_tree')));
+  $output = drupal_render_children($form).$output;
+
+  return $output;
 }
 
 /**
@@ -96,7 +303,10 @@ function camplus_pr_theme() {
     ),
     'camplus_pr_approve_settings_form'  => array(
       'render element' => 'form',
-    ),            
+    ),  
+    'camplus_pr_budget_settings_form' => array(
+      'render element' => 'form',
+    ),          
   );
 }
 /**
