@@ -197,6 +197,18 @@ function camplus_pr_settings_form() {
     '#description' => 'how many group of settings',
     '#required' => TRUE,
   );
+  $form['camplus_pr_financial_year_begin'] = array(
+    '#type' => 'textfield',
+    '#title' => t('FINANCIAL YEAR Begin'),
+    '#default_value' => variable_get('camplus_pr_financial_year_begin', '09-01'),
+    '#required' => TRUE,
+  );  
+  $form['camplus_pr_financial_year_end'] = array(
+    '#type' => 'textfield',
+    '#title' => t('FINANCIAL YEAR ENd'),
+    '#default_value' => variable_get('camplus_pr_financial_year_end', '08-31'),
+    '#required' => TRUE,
+  );
   return system_settings_form($form);
 }
 

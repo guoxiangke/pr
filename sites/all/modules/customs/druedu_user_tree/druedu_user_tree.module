@@ -43,7 +43,7 @@ function druedu_user_import_form($form, $form_state) {
     '#value' => $args[2], // school_department
   );
   $form['import']['download'] = array(
-    '#markup' =>l('Generate template','admin/people/advanced_membership_management/export'),
+    '#markup' =>l('Generate template','admin/people/advanced_management/export'),
   );
   $form['import']['file_upload'] = array(
     '#type' => 'file',
@@ -269,7 +269,7 @@ function druedu_user_group_template_generate($type) {
   if(druedu_phpexcel_export($headers, $data, $path)){//@see phpexcel_export
     drupal_set_message(t('The template has been successfully generated. Click '.l('here',$path)).' to download.', 'status');
   }
-  drupal_goto('admin/people/advanced_membership_management/department/bi');
+  drupal_goto('admin/people/advanced_management/department/bi');
 }
 
 function druedu_user_admin_groups($form, $form_state) {

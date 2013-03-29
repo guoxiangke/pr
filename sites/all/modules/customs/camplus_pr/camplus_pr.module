@@ -153,6 +153,7 @@ function camplus_pr_budget_settings_form() {
     $order++;
 
   }
+  camplus_pr_get_prs(4, $uid = NULL);
   return $form;
 }
 
@@ -212,26 +213,37 @@ function theme_camplus_pr_budget_settings_form($variables) {
           $row[] = '-';
         }
        //已批支出 get all PRs
-         $prs = druedu_user_get_nodes_by_group($gid, $subject = null, $class = null, $grade_group_content = 'purchase_request');
+        $budget_nid = $gid;
+        $prs = camplus_pr_get_prs($budget_nid);
+         // $prs = druedu_user_get_nodes_by_group($gid, $subject = null, $class = null, $grade_group_content = 'purchase_request');
+
          $pending = 0;
          $approved = 0;
          $rejectd = 0;
          // get  approved appending and rejectd
          foreach ($prs as $nid => $pr_node) {
            $widgets = rate_get_active_widgets('node', $pr_node->type);
+           //get pr item
+           foreach ($pr_node->field_budget_items[LANGUAGE_NONE] as $key => $value) {
+            if($value['target_id'] ==  $budget_nid) {
+              //field_budget_items_amount_index
+              $bi_index = $key;
+              break;
+            }
+           }
             foreach ($widgets as $widget_id => $widget) {
               if($widget->name == 'approve'){
                 $widget->id = $widget_id;
                 $approve_status = _rate_pr_check_permissions($pr_node,$widget);
                 switch ($approve_status['workflow_status']) {
                   case 'pending':
-                    $pending += $pr_node->field_chosen_price[LANGUAGE_NONE][0]['value'];
+                    $pending += $pr_node->field_budget_items_amount[LANGUAGE_NONE][$bi_index]['value'];
                     break;
                   case 'approved':
-                    $approved += $pr_node->field_chosen_price[LANGUAGE_NONE][0]['value'];
+                    $approved += $pr_node->field_budget_items_amount[LANGUAGE_NONE][$bi_index]['value'];
                     break;
                   default: //rejectd FALSE
-                    $rejectd += $pr_node->field_chosen_price[LANGUAGE_NONE][0]['value'];
+                    $rejectd += $pr_node->field_budget_items_amount[LANGUAGE_NONE][$bi_index]['value'];
                     break;
                 }
                 break;
@@ -359,4 +371,24 @@ function camplus_pr_approve_flag_generate($key) {
     'api_version' => 2,
   );
   return $flags;
+}
+
+//获取该预算下的所有PR
+function camplus_pr_get_prs($budget_nid, $uid = NULL) {
+  if(!$uid) {
+    global $user;
+    $uid =  $user->uid;
+  }
+  $query = db_select('field_data_field_budget_items', 'f');
+  $query->join('node','n','n.nid = f.entity_id');
+  $nids = $query
+    ->fields('f', array('entity_id'))//nid
+    ->condition('f.field_budget_items_target_id ',$budget_nid)
+    
+    ->condition('n.status',1)
+    ->orderBy('n.created ', 'ASC')
+    ->execute()
+    ->fetchCol();
+  $nodes = node_load_multiple($nids);
+  return $nodes ? $nodes : array();
 }
