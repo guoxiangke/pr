@@ -6,3 +6,4 @@ version = "7.x-1.x-dev"
 configure = admin/people/advanced_membership_management/add/school_group
 ;dependencies[] = druedu_user
 dependencies[] = phpexcel
+;druedu_user

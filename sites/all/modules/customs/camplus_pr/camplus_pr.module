@@ -94,6 +94,11 @@ function camplus_pr_permission() {
    );
 }
 function camplus_pr_budget_settings_form() {
+  if(isset($_REQUEST['financial_year'])){
+    $financial_year = $_REQUEST['financial_year'];
+  }else {
+    $financial_year =  date('Y-m-d H:i:s',strtotime(date('Y').'-01-01 00:00:00'));
+  }
   $public_groups = druedu_user_get_nodes_by_group('school_department');
   foreach ($public_groups as $g_nid => $g_node) {
     $groups[$g_nid]['gid'] = $g_nid;
@@ -102,7 +107,9 @@ function camplus_pr_budget_settings_form() {
     $groups[$g_nid]['type'] = 'school_department';
     $groups[$g_nid]['name'] = $g_node->title; 
     //($grade, $subject = null, $class = null, $grade_group_content = 'subject', $subject_group_content = 'class')
-    $all_subjects_node = druedu_user_get_nodes_by_group($g_nid, $subject = null, $class = null, $grade_group_content = 'budget_item');
+    // $all_subjects_node = druedu_user_get_nodes_by_group($g_nid, $subject = null, $class = null, $grade_group_content = 'budget_item');
+    //camplus_pr_get_bis_by_year($department_nid, $financial_year = NULL)
+    $all_subjects_node = camplus_pr_get_bis_by_year($g_nid,$financial_year);
     foreach ($all_subjects_node as $s_nid => $s_node) {
       $groups[$s_nid]['gid'] = $s_nid;
       $groups[$s_nid]['depth'] = 1;
@@ -116,7 +123,9 @@ function camplus_pr_budget_settings_form() {
   $form['groups'] = array(
     '#tree' => TRUE,
   );
-
+  $form['financial_year'] = array(
+    '#markup' =>l('2013','admin/people/advanced_management/budget/settings&financial_year=2013'),
+  );
   $order = 1;
   if(isset($groups['-1']))unset($groups['-1']);
   foreach ($groups as $gid => $group) {
@@ -373,23 +382,48 @@ function camplus_pr_approve_flag_generate($key) {
   return $flags;
 }
 
-//获取该预算下的所有PR
-function camplus_pr_get_prs($budget_nid, $uid = NULL) {
-  if(!$uid) {
-    global $user;
-    $uid =  $user->uid;
+//获取该年度的所有预算budget_item
+//camplus_pr_get_bis_by_year
+
+function camplus_pr_get_bis_by_year($department_nid, $financial_year = NULL) {
+  if(!$financial_year) {
+    //2014-01-01 00:00:00
+    $financial_year =  date('Y-m-d H:i:s',strtotime(date('Y').'-01-01 00:00:00'));
+  }else{
+    $financial_year =  date('Y-m-d H:i:s',strtotime($financial_year.'-01-01 00:00:00'));
   }
-  $query = db_select('field_data_field_budget_items', 'f');
+  dpm($financial_year,'$financial_year');
+  $query = db_select('field_data_field_financial_year', 'f');
   $query->join('node','n','n.nid = f.entity_id');
   $nids = $query
     ->fields('f', array('entity_id'))//nid
-    ->condition('f.field_budget_items_target_id ',$budget_nid)
+    ->condition('n.type ','budget_item')
+    ->condition('f.field_financial_year_value',$financial_year)
     
     ->condition('n.status',1)
     ->orderBy('n.created ', 'ASC')
-    ->execute()
-    ->fetchCol();
-  $nodes = node_load_multiple($nids);
+    ->execute();
+  $nodes = node_load_multiple($nids->fetchCol());
+  return $nodes ? $nodes : array();
+}
+
+//获取该预算下的所有PR
+//get_group_nodes_by_uid/field_financial_year
+function camplus_pr_get_prs($budget_nid, $uid = NULL) {
+  //strtotime($field_financial_year);
+  $query = db_select('field_data_field_budget_items', 'f');
+  $query->join('node','n','n.nid = f.entity_id');
+  $query = $query
+    ->fields('f', array('entity_id'))//nid
+    ->condition('f.field_budget_items_target_id',$budget_nid);
+  if($uid && is_numeric($uid)) {
+     $query = $query->condition('n.status',1);
+  }
+    
+  $query = $query->condition('n.status',1)
+    ->orderBy('n.created ', 'ASC')
+    ->execute();
+  $nodes = node_load_multiple($query->fetchCol());
   return $nodes ? $nodes : array();
 }
 
@@ -410,12 +444,12 @@ function node_access4camplus_pr($op, $node, $account = NULL) {
     $flags = flag_get_counts('node', $node->nid,TRUE);
     //如果已标记canceled，不可编辑
     if(isset($flags['cancel']) && $flags['cancel']) {
-      dpm('here!');
+      dpm('已 cancel!无法编辑');
       return false;
     }
     if($rate_results['count']) {
       //只要有一人投票，即不可更改
-      dpm('已审核或审核中，无法更改、编辑');  dpm($rate_results);
+      dpm('已审核或审核中，无法更改、编辑:只要有一人投票，即不可更改');  dpm($rate_results);
       return false;
     }
     return node_access($op, $node, $account = NULL);

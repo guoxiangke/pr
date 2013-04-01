@@ -37,6 +37,8 @@ function druedu_user_import_form($form, $form_state) {
   $form['import'] = array(
     '#type' => 'fieldset',
     '#title' => t('import data'),
+
+    '#description' =>'仅支持导入当前学年度的BIs',
   );
   $form['import']['type']= array(
     '#type' => 'value',
@@ -273,50 +275,28 @@ function druedu_user_group_template_generate($type) {
 }
 
 function druedu_user_admin_groups($form, $form_state) {
-  $args = func_get_args();
 
-/* //TODO: delete debug of og_group on nodes.....
-  $group_type ='node';
-  $gid = 218;
-  $entity = node_load(254);
-        $values = array(  
-        'entity type' => 'node',  
-        'entity' => $entity);
-      //og_is_member($group_type, $gid, $entity_type = 'user', $entity = NULL, $states = array(OG_STATE_ACTIVE)) 
-      $is_member_before = og_is_member($group_type, $gid, $entity_type = 'node', $entity, $states = array(OG_STATE_ACTIVE)) ;
-       dpm('is_member_before', var_export($is_member_before,true));
-
-      //og_group('node',$gid, $values);
-      og_ungroup($group_type, $gid, $entity_type = 'node', $entity->nid); 
-      //function og_group($group_type, $gid, $values = array())
-      node_save($entity);
-      $is_member_before = og_is_member($group_type, $gid, $entity_type = 'node', $entity, $states = array(OG_STATE_ACTIVE)) ;
- dpm('is_member_after', var_export($is_member_before,true));*/
-  //drupal_add_js(data, options);
-  //drupal_add_css(data, options);
-  //drupal_set_title('Advanced membership management > Add '.$type);
-  //return druedu_node_add($type);
-  //$type = 'school_group';
-      $type = 'public_group';
-        $public_groups = druedu_user_get_nodes_by_group('school_department');
-        foreach ($public_groups as $g_nid => $g_node) {
-          # code...
-              $groups[$g_nid]['gid'] = $g_nid;
-              $groups[$g_nid]['depth'] = 0;
-              $groups[$g_nid]['parent'] = 0;
-              $groups[$g_nid]['type'] = 'school_department';
-              $groups[$g_nid]['name'] = $g_node->title; 
-              //($grade, $subject = null, $class = null, $grade_group_content = 'subject', $subject_group_content = 'class')
-              $all_subjects_node = druedu_user_get_nodes_by_group($g_nid, $subject = null, $class = null, $grade_group_content = 'budget_item');
-              foreach ($all_subjects_node as $s_nid => $s_node) {
-                $groups[$s_nid]['gid'] = $s_nid;
-                $groups[$s_nid]['depth'] = 1;
-                $groups[$s_nid]['parent'] = $g_nid;
-                $groups[$g_nid]['type'] = 'budget_item';
-                $groups[$s_nid]['name'] = $s_node->title;
-              }
-
+  $type = 'public_group';
+  $public_groups = druedu_user_get_nodes_by_group('school_department');
+  foreach ($public_groups as $g_nid => $g_node) {
+    # code...
+        $groups[$g_nid]['gid'] = $g_nid;
+        $groups[$g_nid]['depth'] = 0;
+        $groups[$g_nid]['parent'] = 0;
+        $groups[$g_nid]['type'] = 'school_department';
+        $groups[$g_nid]['name'] = $g_node->title; 
+        //($grade, $subject = null, $class = null, $grade_group_content = 'subject', $subject_group_content = 'class')
+        // $all_subjects_node = druedu_user_get_nodes_by_group($g_nid, $subject = null, $class = null, $grade_group_content = 'budget_item');
+        $all_subjects_node = camplus_pr_get_bis_by_year($g_nid, $financial_year = NULL);
+        foreach ($all_subjects_node as $s_nid => $s_node) {
+          $groups[$s_nid]['gid'] = $s_nid;
+          $groups[$s_nid]['depth'] = 1;
+          $groups[$s_nid]['parent'] = $g_nid;
+          $groups[$g_nid]['type'] = 'budget_item';
+          $groups[$s_nid]['name'] = $s_node->title;
         }
+
+  }
 
   $form['#tree'] = TRUE;
   $form['groups'] = array(
@@ -505,6 +485,8 @@ function druedu_user_admin_groups_submit($form, &$form_state) {
         //$ref_field = 'og_node';
 
         $node->field_parents_department[LANGUAGE_NONE][0] = array('target_id' => $gid);
+        $financial_year =  date('Y-m-d H:i:s',strtotime(date('Y').'-01-01 00:00:00'));
+        $node->field_financial_year[LANGUAGE_NONE][0] = array('value' => $financial_year,'date_type' => 'datetime');
         // $node->og_node[LANGUAGE_NONE][0] = array('target_id' => $gid);
         node_save($node);
         drupal_set_message(t('A new budget item '.l($new_group['title'],'node/'.$node->nid).' has been successfully added'), 'status');
@@ -513,50 +495,6 @@ function druedu_user_admin_groups_submit($form, &$form_state) {
 
     }
 
-    }
-    if($form_state['values']['type']=='school_group') 
-    switch ($new_group['depth']) {
-
-      case '0' :
-      case '-1':
-        $type = 'grade';
-        /* //user can't create grade by themself.
-        // create a blank node
-        $node = (object) array('uid' => $user->uid, 'title'=>$new_group['title'], 'name' => (isset($user->name) ? $user->name : ''), 'type' => $type, 'language' => LANGUAGE_NONE);
-        node_save($node);*/
-        break;
-      case '1':
-        $type = 'subject';
-        $gid = $new_group['parent'];
-        // create a blank node
-        $node = (object) array('uid' => $user->uid, 'title'=>$new_group['title'], 'name' => (isset($user->name) ? $user->name : ''), 'type' => $type, 'language' => LANGUAGE_NONE);
-        node_object_prepare($node);
-        $node->og_node[LANGUAGE_NONE][0] = array('target_id' => $gid);
-
-        node_save($node);
-        //$ref_field = 'og_node';
-        // $node->og_node[LANGUAGE_NONE][0] = array('target_id' => $gid);
-        // node_save($node);
-        drupal_set_message(t('A new subject '.l($new_group['title'],'node/'.$node->nid).' has been successfully added'), 'status');
-        break;
-      
-      default:
-         $type = 'class';
-         $gid = $new_group['parent'];
-         // create a blank node
-         $node = new stdClass();
-         $node->type = $type;
-         node_object_prepare($node);
-
-         $node->title = $new_group['title'];
-         $node->language = LANGUAGE_NONE;
-         $node->uid = $user->uid;
-         $node->name =isset($user->name) ? $user->name : '';
-         //$node = (object) array('uid' => $user->uid, 'title'=>$new_group['title'], 'name' => (isset($user->name) ? $user->name : ''), 'type' => $type, 'language' => LANGUAGE_NONE);
-         $node->og_group_ref[LANGUAGE_NONE][0] = array('target_id' => $gid);
-         node_save($node);
-         drupal_set_message(t('A new class '.l($new_group['title'],'node/'.$node->nid).' has been successfully added'), 'status');
-        break;
     }
   }
   //
@@ -742,6 +680,7 @@ function druedu_phpexcel_export($headers = array(), $data = array(), $path = '',
   
   return file_exists($path);
 }
+
 /**
  * Get all nodes of the specific group.
  * $grade : node type or grade nid.
