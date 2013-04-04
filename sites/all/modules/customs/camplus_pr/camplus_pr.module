@@ -458,23 +458,6 @@ function node_access4camplus_pr($op, $node, $account = NULL) {
       dpm('一旦发布 not be a Draft，不可编辑',__LINE__);
       return false;
     }
-//delete  begin
-    //  如果flag 已标记canceled，不可编辑
-    // $widget = _camplus_pr_get_approve_rate($node);
-    // $rate_results = rate_get_results('node', $node->nid, $widget->id);
-    // $flags = flag_get_counts('node', $node->nid,TRUE);
-
-    // dpm($flags);
-    // if(isset($flags['cancel']) && $flags['cancel']) {
-    //   dpm('已 cancel!无法编辑');
-    //   return false;
-    // }
-    // if($rate_results['count']) {
-    //   //只要有一人投票，即不可更改
-    //   dpm('已审核或审核中，无法更改、编辑:只要有一人投票，即不可更改');  dpm($rate_results);
-    //   return false;
-    // }
-//delete end
     return node_access($op, $node, $account = NULL);
   }else {
     return node_access($op, $node, $account = NULL);
