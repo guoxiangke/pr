@@ -222,48 +222,6 @@ function _rate_pr_check_permissions($node, $widget, $user = NULL) {
 }
 
 /**
- * Allow modules to allow or deny access to flagging.
- *
- * @param $flag
- *  The flag object.
- * @param $content_id
- *  The id of the entity in question.
- * @param $action
- *  The action to test. Either 'flag' or 'unflag'.
- * @param $account
- *  The user on whose behalf to test the flagging action.
- *
- * @return
- *   Boolean TRUE if the user is allowed to flag/unflag the given content.
- *   FALSE otherwise.
- *
- * @see flag_flag:access()
- */
-function rate_pr_flag_access($flag, $content_id, $action, $account) {
-  if($flag->name == 'cancel') {
-    $node = node_load($content_id);
-    if($node->uid != $account->uid) return;
-    $widget = _camplus_pr_get_approve_rate($node);
-    if(isset($widget->id))
-      $approve_status = _rate_pr_check_permissions($node,$widget);
-    dpm($approve_status);
-    switch ($approve_status['workflow_status']) {
-      case 'approved':
-        dpm('已审核，不可Cancel');
-        return FALSE;
-        break;
-      case 'reject':
-        dpm('审核未通过，不可Cancel');
-        return FALSE;
-        break;
-      default:
-        dpm('pending，可Cancel');
-        break;
-    }
-  }
-}
-
-/**
  * get the flag of Pr-Node approve rate-id
  * @param $node the node which content type must be purchase_request
  * @return $rate_id object the approve rate id

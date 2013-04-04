@@ -20,7 +20,10 @@ function camplus_pr_roles_involved_settings_form($form, &$form_state) {
       );
     $count++;
 	}
-  $form['a_help'] = array('#markup' => t('注意:一经设置，不可取消,可添加不可删减,请管理员慎重操作!'));
+  $form['warning_info'] = array('#markup' => t('注意:一经设置，不可取消,可添加不可删减,请管理员慎重操作!'),
+    '#weight'=>-10,'#prefix' => '<div class="messages warning">',
+    '#suffix' => '</div>');
+
   if(!$count) {
   	$form['empty_text'] = array('#markup' => t('没有可用的角色！请为相关角色'.l('添加权限','admin/people/permissions').'“Camplus Purchase Request approvable”'));
   	return $form;
@@ -115,25 +118,25 @@ function theme_camplus_pr_roles_weight_settings_form($variables) {
 }
 
 function camplus_pr_range_settings_form() {
-   $i=0;
-   $range = variable_get('camplus_pr_settings_range', '5');
-   $range_settings = variable_get('camplus_pr_range_settings', ''); 
-   while($i<$range){
-      $form[$i]['range']["pr_range_begin_$i"] = array(
-        '#type' => 'textfield',
-        '#default_value' =>$range_settings[$i]["begin"],
-        '#prefix' => 'HK$',
-        '#size' => 20, 
-      );
-      $form[$i]['range']["pr_range_end_$i"] = array(
-        '#type' => 'textfield',
-        '#default_value' =>$range_settings[$i]["end"],
-        '#prefix' => 'HK$',
-        '#size' => 20, 
-      );
-      $i++;
-    }
-      // Add the buttons.
+ $i=0;
+ $range = variable_get('camplus_pr_settings_range', '5');
+ $range_settings = variable_get('camplus_pr_range_settings', ''); 
+ while($i<$range){
+    $form[$i]['range']["pr_range_begin_$i"] = array(
+      '#type' => 'textfield',
+      '#default_value' =>$range_settings[$i]["begin"],
+      '#prefix' => 'HK$',
+      '#size' => 20, 
+    );
+    $form[$i]['range']["pr_range_end_$i"] = array(
+      '#type' => 'textfield',
+      '#default_value' =>$range_settings[$i]["end"],
+      '#prefix' => 'HK$',
+      '#size' => 20, 
+    );
+    $i++;
+  }
+// Add the buttons.
   $form['actions'] = array('#type' => 'actions');
   $form['actions']['submit'] = array(
     '#type' => 'submit',
@@ -186,7 +189,9 @@ function theme_camplus_pr_range_settings_form($variables) {
   $output = theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('id' => 'approvable_role')));
   $output .= drupal_render_children($form);
 
-  return $output;
+
+  $warning = '<div class="messages warning">一经设置，请审慎更改! </div>';
+  return $warning.$output;
 }
 
 function camplus_pr_settings_form() {
@@ -208,7 +213,10 @@ function camplus_pr_settings_form() {
     '#title' => t('FINANCIAL YEAR ENd'),
     '#default_value' => variable_get('camplus_pr_financial_year_end', '08-31'),
     '#required' => TRUE,
-  );
+  );  
+  $form['warning_info'] = array('#markup' => t('注意:一经设置，请管理员慎重更改!'),
+  '#weight'=>-10,'#prefix' => '<div class="messages warning">',
+  '#suffix' => '</div>');
   return system_settings_form($form);
 }
 
@@ -312,6 +320,6 @@ function theme_camplus_pr_approve_settings_form($variables) {
   }
   $output = theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('id' => 'approvable_role')));
   $output .= drupal_render_children($form);
-
-  return $output;
+  $warning = '<div class="messages warning">一经设置，请审慎更改! </div>';
+  return $warning.$output;
 }
