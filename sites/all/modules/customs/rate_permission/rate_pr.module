@@ -4,15 +4,23 @@
  * Implements hook_node_view().
  */
 function rate_pr_node_view($node, $view_mode, $langcode) {
-  if ($view_mode != 'rss' && $node->type == 'purchase_request') {  
+
+  //标记paid后，不可以再rate了
+  $show_flag = TRUE;
+  $flags = flag_get_counts('node', $node->nid, $reset = FALSE);
+  if(isset($flags['paid']) && $flags['paid']) {
+     $show_flag = FALSE;
+  }
+  if ($view_mode != 'rss' && $node->type == 'purchase_request') {
     // Adding the form to the node view
     $widgets = rate_get_active_widgets('node', $node->type, $view_mode);
     foreach ($widgets as $widget_id => $widget) {
     	//没有权限时，清楚rate
       $widget->id = $widget_id;
+      //一旦审核通过，所有审批部门角色不可更改即 not show rate.
       if($widget->name == 'approve') {
         $approve_status = _rate_pr_check_permissions($node,$widget);
-        if(!$approve_status['permit_flag'] ) {
+        if(!$approve_status['permit_flag'] || !$show_flag) {
           // 根据PR节点的总额确定which审批流程
           // 在上一个审批流程没有确定前 其他后续
           $widget_name = 'rate_' . $widget->name;
@@ -27,8 +35,12 @@ function rate_pr_node_view($node, $view_mode, $langcode) {
       }
     }
   //如果已经审核，或ing，不可编辑
-    dpm($view_mode);
+  }
 
+  global $user;
+  if(!$node->status &&$node->type ='purchase_request' && $user->uid == $node->uid){
+    $node->content['undraft'] = array('#markup'=>l('undraft','node/'.$node->nid.'/undraft'));
+    $node->content['edit'] = array('#markup'=>l('edit','node/'.$node->nid.'/edit'));
   }
 }
 //check approve workflow status:
@@ -39,7 +51,7 @@ function rate_pr_node_view($node, $view_mode, $langcode) {
 function _rate_pr_check_permissions($node, $widget, $user = NULL) {
 	if($node->type != 'purchase_request') return FALSE;
 	if(!$user) global $user;
-
+  $approve_status['flags'] = flag_get_counts('node', $node->nid, $reset = FALSE);
   //确定角色和第几级审批设定
   {
     //第几级审批设定
