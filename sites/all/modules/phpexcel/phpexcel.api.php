@@ -16,7 +16,7 @@
  * @param array|string &$data
  *        The data. Depends on the operation. See documentation below for more
  *        information
- * @param PHPExcel|PHPExcel_Worksheet &$phpexcel
+ * @param PHPExcel|PHPExcel_Worksheet $phpexcel
  *        The current object used. Can either be a PHPExcel object when working
  *        with the excel file in general or a PHPExcel_Worksheet object when
  *        iterating through the worksheets.
@@ -27,7 +27,7 @@
  * @param int $row
  *        (optional) the row number
  */
-function hook_phpexcel_export($op, &$data, &$phpexcel, $options, $column = NULL, $row = NULL) {
+function hook_phpexcel_export($op, &$data, $phpexcel, $options, $column = NULL, $row = NULL) {
   switch ($op) {
     case 'headers':
       /**
@@ -90,7 +90,7 @@ function hook_phpexcel_export($op, &$data, &$phpexcel, $options, $column = NULL,
  * @param * &$data
  *        The data. Depends on the operation. See documentation below for more
  *        information
- * @param PHPExcel_Reader|PHPExcel_Worksheet|PHPExcel_Cell &$phpexcel
+ * @param PHPExcel_Reader|PHPExcel_Worksheet|PHPExcel_Cell $phpexcel
  *        The current object used. Can either be a PHPExcel_Reader object when
  *        loading the Excel file, a PHPExcel_Worksheet object when iterating
  *        through the worksheets or a PHPExcel_Cell object when reading data
@@ -102,7 +102,7 @@ function hook_phpexcel_export($op, &$data, &$phpexcel, $options, $column = NULL,
  * @param int $row
  *        (optional) the row number
  */
-function hook_phpexcel_import($op, &$data, &$phpexcel, $options, $column = NULL, $row = NULL) {
+function hook_phpexcel_import($op, &$data, $phpexcel, $options, $column = NULL, $row = NULL) {
   switch ($op) {
     case 'full':
       /**

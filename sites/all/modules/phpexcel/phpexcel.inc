@@ -5,6 +5,14 @@
  * Defines the phpexcel api functions that other modules can use.
  */
 
+define('PHPEXCEL_ERROR_NO_HEADERS', 0);
+define('PHPEXCEL_ERROR_NO_DATA', 1);
+define('PHPEXCEL_ERROR_PATH_NOT_WRITABLE', 2);
+define('PHPEXCEL_ERROR_LIBRARY_NOT_FOUND', 3);
+define('PHPEXCEL_ERROR_FILE_NOT_WRITTEN', 4);
+define('PHPEXCEL_ERROR_FILE_NOT_READABLE', 5);
+define('PHPEXCEL_SUCCESS', 10);
+
 /**
  * Simple API function which will generate an XLS file and
  * save it in $path.
@@ -30,41 +38,42 @@
  *            The options array will always be passed to all the hooks. If
  *						developers need specific information for their own hooks, they
  *						can add any data to this array.
- * @return bool
- * 						TRUE on success, FALSE on error. Look in watchdog logs for information
+ * @return PHPEXCEL_SUCCESS|PHPEXCEL_ERROR_NO_HEADERS|PHPEXCEL_ERROR_NO_DATA|PHPEXCEL_ERROR_PATH_NOT_WRITABLE|PHPEXCEL_ERROR_LIBRARY_NOT_FOUND
+ * 						PHPEXCEL_SUCCESS on success, PHPEXCEL_ERROR_NO_HEADERS, PHPEXCEL_ERROR_NO_DATA, PHPEXCEL_ERROR_PATH_NOT_WRITABLE or
+ * 						PHPEXCEL_ERROR_LIBRARY_NOT_FOUND on error. Look in watchdog logs for information
  *            about errors.
  */
 function phpexcel_export($headers = array(), $data = array(), $path = '', $options = NULL) {
   if (!count($headers) && (!isset($options['ignore_headers']) || (isset($options['ignore_headers']) && !$options['ignore_headers']))) {
-    watchdog('phpexcel', "You must provide at lease one header entry!", array(), WATCHDOG_ERROR);
+    watchdog('phpexcel', "No header was provided, and the 'ignore_headers' option was not set to TRUE. Excel export aborted.", array(), WATCHDOG_ERROR);
 		
-    return FALSE;
+    return PHPEXCEL_ERROR_NO_HEADERS;
   }
   
   if (!count($data)) {
-    watchdog('phpexcel', "No data provided!", array(), WATCHDOG_ERROR);
+    watchdog('phpexcel', "No data was provided. Excel export aborted.", array(), WATCHDOG_ERROR);
 		
-    return FALSE;
+    return PHPEXCEL_ERROR_NO_DATA;
   }
 	
   if (!(is_writable($path) || (!file_exists($path) && is_writable(dirname($path))))) {
-    watchdog('phpexcel', "Path '@path' is not writable!", array('@path' => $path), WATCHDOG_ERROR);
+    watchdog('phpexcel', "Path '@path' is not writable. Excel export aborted.", array('@path' => $path), WATCHDOG_ERROR);
 		
-    return FALSE;
+    return PHPEXCEL_ERROR_PATH_NOT_WRITABLE;
   }
   
-	if (!file_exists('sites/all/libraries/PHPExcel/PHPExcel.php')) {
-		watchdog('phpexcel', "Couldn't find the PHPExcel library! ", array(), WATCHDOG_ERROR);
+  $library = libraries_load('PHPExcel');
+
+	if (empty($library['loaded'])) {
+		watchdog('phpexcel', "Couldn't find the PHPExcel library. Excel export aborted.", array(), WATCHDOG_ERROR);
 		
-		return FALSE;	
+		return PHPEXCEL_ERROR_LIBRARY_NOT_FOUND;	
 	}
-	
-  require_once 'sites/all/libraries/PHPExcel/PHPExcel.php';
 	
 	$path = phpexcel_munge_filename($path);
 	
 	// Can we use Memcache ?
-	$memcache = variable_get('phpexcel_memcache', '');
+	$memcache = variable_get('phpexcel_memcache', FALSE);
 	
   if (empty($memcache) || !$cache_method = PHPExcel_CachedObjectStorageFactory::cache_to_memcache) {
 		$cache_method = PHPExcel_CachedObjectStorageFactory::cache_in_memory_gzip;
@@ -94,7 +103,7 @@ function phpexcel_export($headers = array(), $data = array(), $path = '', $optio
 		_phpexcel_set_headers($xls, $headers, $options);
 	}
 	
-  _phpexcel_set_columns($xls, $data, count(reset(array_values($headers))), $options);
+  _phpexcel_set_columns($xls, $data, empty($options['ignore_headers']) ? $headers : NULL, $options);
   
   if (!isset($options['format']) || $options['format'] == 'xls') {
 		$writer = new PHPExcel_Writer_Excel5($xls);
@@ -105,7 +114,7 @@ function phpexcel_export($headers = array(), $data = array(), $path = '', $optio
 	
 	$writer->save($path);
 	
-	return file_exists($path);
+	return file_exists($path) ? PHPEXCEL_SUCCESS : PHPEXCEL_ERROR_FILE_NOT_WRITTEN;
 }
 
 /**
@@ -143,7 +152,7 @@ function phpexcel_export_db_result($result, $path, $options = array()) {
  *
  * @see phpexcel_export()
  */
-function _phpexcel_set_properties(&$properties, $options) {
+function _phpexcel_set_properties($properties, $options) {
   if (isset($options['creator'])) {
     $properties->setCreator($options['creator']);
   }
@@ -169,18 +178,14 @@ function _phpexcel_set_properties(&$properties, $options) {
  *
  * @see phpexcel_export()
  */
-function _phpexcel_set_headers(&$xls, &$headers, $options) {
-	//Strict warning: Only variables should be passed by reference in _phpexcel_set_headers() (line 173 of /Applications/MAMP/htdocs/druedu/trunk/sites/all/modules/phpexcel/phpexcel.inc).
-	//debug guo 
-	$temp = array_values($headers);
-	$temp = reset($temp);
-	if (!is_array($temp)) {
+function _phpexcel_set_headers($xls, &$headers, $options) {
+	if (!is_array(reset(array_values($headers)))) {
 		$headers = array($headers);
 	}
 	
 	phpexcel_invoke('export', 'headers', $headers, $xls, $options);
 	
-	$sheet_id = 0;
+	$sheet_id = 1;
 	
 	foreach ($headers as $sheet_name => $sheet_headers) {
 		$xls->createSheet($sheet_id);
@@ -215,30 +220,52 @@ function _phpexcel_set_headers(&$xls, &$headers, $options) {
  *
  * @see phpexcel_export()
  */
-function _phpexcel_set_columns(&$xls, &$data, $cols, $options) {
-	$data = array_values($data);
-	
-	if (!is_array($data[0][0])) {
+function _phpexcel_set_columns($xls, &$data, $headers = NULL, $options = array()) {	
+	if (!is_array(reset(reset(array_values($data))))) {
 		$data = array($data);
 	}
 	
 	phpexcel_invoke('export', 'data', $data, $xls, $options);
 	
-	foreach ($data as $sheet_id => $sheet_data) {
-		$sheet = $xls->setActiveSheetIndex($sheet_id);
+	$sheet_id = 1;
+	
+	foreach ($data as $sheet_name => $sheet_data) {
+		// If the headers are not set, we haven't created any sheets yet.
+		// Create them now.
+		if (!isset($headers)) {
+			$offset = 1;
+			$xls->createSheet($sheet_id);
+		
+			phpexcel_invoke('export', 'new sheet', $sheet_id, $xls, $options);
+			
+			$sheet = $xls->setActiveSheetIndex($sheet_id);
+
+			if (!is_numeric($sheet_name)) {
+				$sheet->setTitle($sheet_name);
+			}
+			else {
+				$sheet->setTitle("Worksheet $sheet_id");
+			}
+		}
+		else {
+			$offset = 2;
+			$sheet = $xls->setActiveSheetIndex($sheet_id);
+		}
 	
 		for ($i = 0, $len = count($sheet_data); $i < $len; $i++) {
-			for ($j = 0; $j < $cols; $j++) {
+			for ($j = 0; $j < count($sheet_data[$i]); $j++) {
 				$value = isset($sheet_data[$i][$j]) ? $sheet_data[$i][$j] : '';
 				
 				// We must offset the row count (by 2, because PHPExcel starts the count at 1), because the first row is used by the headers
-				phpexcel_invoke('export', 'pre cell', $value, $sheet, $options, $j, $i + 2);
+				phpexcel_invoke('export', 'pre cell', $value, $sheet, $options, $j, $i + $offset);
 				
-				$sheet->setCellValueByColumnAndRow($j, $i + 2, $value);
+				$sheet->setCellValueByColumnAndRow($j, $i + $offset, $value);
 				
-				phpexcel_invoke('export', 'post cell', $value, $sheet, $options, $j, $i + 2);
+				phpexcel_invoke('export', 'post cell', $value, $sheet, $options, $j, $i + $offset);
 			}
 		}
+
+		$sheet_id++;
 	}
 }
 
@@ -252,82 +279,88 @@ function _phpexcel_set_columns(&$xls, &$data, $cols, $options) {
  * 						If TRUE, will key the row array with the header values and will
  * 						skip the header row. If FALSE, will contain the headers in the first
  * 						row and the rows will be keyed numerically.
- * @return array|boolean
- * 						The parsed data as an array on success, FALSE on error. Look into
- * 						watchdog logs for information about errors.
+ * @return array|PHPEXCEL_ERROR_LIBRARY_NOT_FOUND|PHPEXCEL_ERROR_FILE_NOT_READABLE
+ * 						The parsed data as an array on success, PHPEXCEL_ERROR_LIBRARY_NOT_FOUND or PHPEXCEL_ERROR_FILE_NOT_READABLE on error.
  */
 function phpexcel_import($path, $keyed_by_headers = TRUE) {
 	if (is_readable($path)) {
-		require_once 'sites/all/libraries/PHPExcel/PHPExcel.php';
-		
-		$xls_reader = PHPExcel_IOFactory::createReaderForFile($path);
-		
-		$xls_reader->setReadDataOnly(TRUE);
-		
-		$xls_data = $xls_reader->load($path);
-		
-		$data = array();
-		$headers = array();
-		$i = 0;
-		
-		phpexcel_invoke('import', 'full', $xls_data, $xls_reader, array('keyed_by_headers' => $keyed_by_headers));
-		
-		foreach ($xls_data->getWorksheetIterator() as $worksheet) {
-			$j = 0;
+		$library = libraries_load('PHPExcel');
+
+		if (!empty($library['loaded'])) {
+			$xls_reader = PHPExcel_IOFactory::createReaderForFile($path);
 			
-			phpexcel_invoke('import', 'sheet', $worksheet, $xls_reader, array('keyed_by_headers' => $keyed_by_headers));
+			$xls_reader->setReadDataOnly(TRUE);
 			
-			foreach ($worksheet->getRowIterator() as $row) {
-				$k = 0;
+			$xls_data = $xls_reader->load($path);
+			
+			$data = array();
+			$headers = array();
+			$i = 0;
+			
+			phpexcel_invoke('import', 'full', $xls_data, $xls_reader, array('keyed_by_headers' => $keyed_by_headers));
+			
+			foreach ($xls_data->getWorksheetIterator() as $worksheet) {
+				$j = 0;
 				
-				phpexcel_invoke('import', 'row', $row, $xls_reader, array('keyed_by_headers' => $keyed_by_headers));
+				phpexcel_invoke('import', 'sheet', $worksheet, $xls_reader, array('keyed_by_headers' => $keyed_by_headers));
 				
-				$cells = $row->getCellIterator();
-				
-				$cells->setIterateOnlyExistingCells(FALSE);
-				
-				foreach($cells as $cell) {					
-					if (!$j && $keyed_by_headers) {
-						$value = $cell->getValue() ? trim($cell->getValue()) : $k;
+				foreach ($worksheet->getRowIterator() as $row) {
+					$k = 0;
+					
+					phpexcel_invoke('import', 'row', $row, $xls_reader, array('keyed_by_headers' => $keyed_by_headers));
+					
+					$cells = $row->getCellIterator();
+					
+					$cells->setIterateOnlyExistingCells(FALSE);
+					
+					foreach($cells as $cell) {					
+						if (!$j && $keyed_by_headers) {
+							$value = $cell->getValue() ? trim($cell->getValue()) : $k;
+							
+							phpexcel_invoke('import', 'pre cell', $value, $cell, array('keyed_by_headers' => $keyed_by_headers), $k, $j);
+							
+							$headers[$i][] = $value;
+						}
+						elseif ($keyed_by_headers) {
+							$value = $cell->getValue() ? $cell->getValue() : '';
+							
+							phpexcel_invoke('import', 'pre cell', $value, $cell, array('keyed_by_headers' => $keyed_by_headers), $k, $j);
+							
+							$data[$i][$j - 1][$headers[$i][$k]] = $value;
+							
+							phpexcel_invoke('import', 'post cell', $data[$i][$j - 1][$headers[$i][$k]], $cell, array('keyed_by_headers' => $keyed_by_headers), $k, $j);
+						}
+						else {
+							$value = $cell->getValue() ? $cell->getValue() : '';
+							
+							phpexcel_invoke('import', 'pre cell', $value, $cell, array('keyed_by_headers' => $keyed_by_headers), $k, $j);
+							
+							$data[$i][$j][] = $value;
+							
+							phpexcel_invoke('import', 'post cell', $data[$i][$j][$k], $cell, array('keyed_by_headers' => $keyed_by_headers), $k, $j);
+						}
 						
-						phpexcel_invoke('import', 'pre cell', $value, $cell, array('keyed_by_headers' => $keyed_by_headers), $k, $j);
-						
-						$headers[$i][] = $value;
-					}
-					elseif ($keyed_by_headers) {
-						$value = $cell->getValue() ? $cell->getValue() : '';
-						
-						phpexcel_invoke('import', 'pre cell', $value, $cell, array('keyed_by_headers' => $keyed_by_headers), $k, $j);
-						
-						$data[$i][$j - 1][$headers[$i][$k]] = $value;
-						
-						phpexcel_invoke('import', 'post cell', $data[$i][$j - 1][$headers[$i][$k]], $cell, array('keyed_by_headers' => $keyed_by_headers), $k, $j);
-					}
-					else {
-						$value = $cell->getValue() ? $cell->getValue() : '';
-						
-						phpexcel_invoke('import', 'pre cell', $value, $cell, array('keyed_by_headers' => $keyed_by_headers), $k, $j);
-						
-						$data[$i][$j][] = $value;
-						
-						phpexcel_invoke('import', 'post cell', $data[$i][$j][$k], $cell, array('keyed_by_headers' => $keyed_by_headers), $k, $j);
+						$k++;
 					}
 					
-					$k++;
+					$j++;
 				}
 				
-				$j++;
+				$i++;
 			}
 			
-			$i++;
+			return $data;
 		}
+		else {
+			watchdog('phpexcel', "Couldn't find the PHPExcel library. Excel import aborted.", array(), WATCHDOG_ERROR);
 		
-		return $data;
+			return PHPEXCEL_ERROR_LIBRARY_NOT_FOUND;	
+		}
 	}
 	else {
-		watchdog('phpexcel', "The path '!path' is not readable !", array('!path' => $path));
+		watchdog('phpexcel', "The path '@path' is not readable. Excel import aborted.", array('@path' => $path));
 		
-		return FALSE;
+		return PHPEXCEL_ERROR_FILE_NOT_READABLE;
 	}
 }
 
@@ -336,7 +369,7 @@ function phpexcel_import($path, $keyed_by_headers = TRUE) {
  * We need a custom hook-invoke method, because we need to pass parameters by
  * reference.
  */
-function phpexcel_invoke($hook, $op, &$data, &$phpexcel, $options, $column = NULL, $row = NULL) {
+function phpexcel_invoke($hook, $op, &$data, $phpexcel, $options, $column = NULL, $row = NULL) {
 	foreach(module_implements('phpexcel_' . $hook) as $module) {
 		$function = $module . '_phpexcel_' . $hook;
 		
