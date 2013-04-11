@@ -278,6 +278,7 @@ function druedu_user_admin_groups($form, $form_state) {
 
   $type = 'public_group';
   $public_groups = druedu_user_get_nodes_by_group('school_department');
+
   foreach ($public_groups as $g_nid => $g_node) {
     # code...
         $groups[$g_nid]['gid'] = $g_nid;
@@ -288,6 +289,7 @@ function druedu_user_admin_groups($form, $form_state) {
         //($grade, $subject = null, $class = null, $grade_group_content = 'subject', $subject_group_content = 'class')
         // $all_subjects_node = druedu_user_get_nodes_by_group($g_nid, $subject = null, $class = null, $grade_group_content = 'budget_item');
         $all_subjects_node = camplus_pr_get_bis_by_year($g_nid, $financial_year = NULL);
+          dpm($all_subjects_node,$g_nid);
         foreach ($all_subjects_node as $s_nid => $s_node) {
           $groups[$s_nid]['gid'] = $s_nid;
           $groups[$s_nid]['depth'] = 1;

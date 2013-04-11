@@ -345,18 +345,7 @@ function camplus_pr_budget_settings_form() {
     // $financial_year = $_REQUEST['financial_year'];
     $financial_year = $_REQUEST['financial_year'].'-01-01 00:00:00';
   }else {
-    //2012-09-01 ~ 2013-08-31
-    //2013-04-02
-    //2013-09-01 ~ 2014-08-31
-    $financial_year_begin = variable_get('camplus_pr_financial_year_begin', '09-01');
-    $financial_year_end = variable_get('camplus_pr_financial_year_end', '08-31');
-    //2014-08-31 00:00:00
-    $financial_year_end = strtotime(date('Y').'-'.$financial_year_end.' 23:59:59');
-    if(time()<=$financial_year_end) {
-      $financial_year =  date('Y').'-01-01 00:00:00';//2013学年度
-    }else{
-      $financial_year =  (date('Y')+1).'-01-01 00:00:00';//2013+1学年度
-    }
+    $financial_year = NULL;
   }
   $public_groups = druedu_user_get_nodes_by_group('school_department');
   foreach ($public_groups as $g_nid => $g_node) {

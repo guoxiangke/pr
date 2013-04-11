@@ -183,6 +183,18 @@ function camplus_pr_approve_flag_generate($key) {
 //financial_year 2013-01-01 00:00:00
 
 function camplus_pr_get_bis_by_year($department_nid, $financial_year = NULL) {
+  if(!$financial_year){
+    $financial_year_begin = variable_get('camplus_pr_financial_year_begin', '09-01');
+    $financial_year_end = variable_get('camplus_pr_financial_year_end', '08-31');
+    //2014-08-31 00:00:00
+    $financial_year_end = strtotime(date('Y').'-'.$financial_year_end.' 23:59:59');
+    if(time()<=$financial_year_end) {
+      $financial_year =  date('Y').'-01-01 00:00:00';//2013学年度
+    }else{
+      $financial_year =  (date('Y')+1).'-01-01 00:00:00';//2013+1学年度
+    }
+  }
+
   $query = db_select('field_data_field_financial_year', 'f');
   $query->join('node','n','n.nid = f.entity_id');
   $nids = $query
@@ -280,8 +292,9 @@ function camplus_pr_flag_access($flag, $content_id, $action, $account) {
 /**
  * @param nid or node
  * get every row of the table.
+ * 获取预算基本信息
  */
-function get_bis_by_bi($node) {
+function get_bis_info($node) {
 
   if(is_numeric($node)) {
     $budget_nid = $node;
@@ -358,10 +371,12 @@ function get_bis_by_bi($node) {
   }
   return $bis;
 }
-
+/**
+ * 获取通用余额
+ */
 function get_bi_mixable_amount($budget_nid) {
   $bi_node = node_load($budget_nid); 
-  $bi_item = get_bis_by_bi($bi_node);
+  $bi_item = get_bis_info($bi_node);
 
 
   if(!isset($bi_node->field_mixable_key[LANGUAGE_NONE][0]['value'])) return $bi_item['amount']-$bi_item['approved']-$bi_item['pending']+$bi_item['allowance'];
@@ -374,10 +389,90 @@ function get_bi_mixable_amount($budget_nid) {
 
   foreach ($bis as $nid => $node) {
     if(isset($node->field_mixable_key[LANGUAGE_NONE][0]['value']) && $node->field_mixable_key[LANGUAGE_NONE][0]['value'] == $mixable_key){
-      $bi_item = get_bis_by_bi($node);
+      $bi_item = get_bis_info($node);
       $max_overage = $bi_item['amount']-$bi_item['approved']-$bi_item['pending']+$bi_item['allowance'];
       $mixable_amount += $max_overage;
     }
   }
+  $return['mixable_amount'] = $mixable_amount;
   return $mixable_amount;
+}
+/**
+ * 获取预算所有信息
+ * @see logic.png
+ */
+function get_bis_info_all($budget_nid) {
+  $node = node_load($budget_nid);
+  $row = array();
+  if(isset($node->field_pr_budget[LANGUAGE_NONE])) {
+    $field_pr_budget = $node->field_pr_budget[LANGUAGE_NONE][0]['value'];
+    $row['a'] = $field_pr_budget;
+  }else{ 
+    $field_pr_budget = 0;
+    $row['a'] = '-';
+  }
+  //已批支出 get all PRs
+  $prs = camplus_pr_get_prs($budget_nid);
+  $pending = 0;
+  $approved = 0;
+  $rejectd = 0;
+  // get  approved appending and rejectd
+   foreach ($prs as $nid => $pr_node) {
+      // 排除canceled PRs
+      $flags = flag_get_counts('node', $nid, $reset = FALSE);
+      if(isset($flags['cancel']) && $flags['cancel']){
+         dpm('canceled pr:'.$nid,__LINE__);
+         continue;
+      }
+
+     $widgets = rate_get_active_widgets('node', $pr_node->type);
+     //get pr item
+     foreach ($pr_node->field_budget_items[LANGUAGE_NONE] as $key => $value) {
+      if($value['target_id'] ==  $budget_nid) {
+        //field_budget_items_amount_index
+        $bi_index = $key;
+        break;
+      }
+     }
+      foreach ($widgets as $widget_id => $widget) {
+        if($widget->name == 'approve'){
+          $widget->id = $widget_id;
+          $approve_status = _rate_pr_check_permissions($pr_node,$widget);
+          switch ($approve_status['workflow_status']) {
+            case 'pending':
+              $pending += $pr_node->field_budget_items_amount[LANGUAGE_NONE][$bi_index]['value'];
+              break;
+            case 'approved':
+              $approved += $pr_node->field_budget_items_amount[LANGUAGE_NONE][$bi_index]['value'];
+              break;
+            default: //rejectd FALSE
+              $rejectd += $pr_node->field_budget_items_amount[LANGUAGE_NONE][$bi_index]['value'];
+              break;
+          }
+          break;
+        }else{
+          continue;
+        }
+      }
+   }
+  $row['b'] = sprintf("%01.2f", $approved);
+
+  $row['c'] = sprintf("%01.2f", $pending);
+  $row_d = $field_pr_budget - $approved - $pending;
+  $row['d'] = sprintf("%01.2f", $field_pr_budget - $approved - $pending);// '预算余额';
+  if(isset($node->field_pr_allowance[LANGUAGE_NONE])) {
+    $row_e = $node->field_pr_allowance[LANGUAGE_NONE][0]['value'];
+    $row['e'] = $row_e;
+  }else{
+    // $row_e = 0;
+    $row['e'] = 0;
+  }
+  $row['f'] = sprintf("%01.2f", $row_d + $row_e);//max余额
+  if(isset($node->field_mixable_key[LANGUAGE_NONE])) {
+    $row['mixable_key'] = $node->field_mixable_key[LANGUAGE_NONE][0]['value'];
+  }else{
+    $row['mixable_key'] = NULL;
+  }
+  $row['g'] = get_bi_mixable_amount($budget_nid);//'通用余额';
+  return $row;
 }
