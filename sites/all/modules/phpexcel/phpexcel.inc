@@ -11,6 +11,7 @@ define('PHPEXCEL_ERROR_PATH_NOT_WRITABLE', 2);
 define('PHPEXCEL_ERROR_LIBRARY_NOT_FOUND', 3);
 define('PHPEXCEL_ERROR_FILE_NOT_WRITTEN', 4);
 define('PHPEXCEL_ERROR_FILE_NOT_READABLE', 5);
+define('PHPEXCEL_CACHING_METHOD_UNAVAILABLE', 6);
 define('PHPEXCEL_SUCCESS', 10);
 
 /**
@@ -71,19 +72,55 @@ function phpexcel_export($headers = array(), $data = array(), $path = '', $optio
 	}
 	
 	$path = phpexcel_munge_filename($path);
-	
-	// Can we use Memcache ?
-	$memcache = variable_get('phpexcel_memcache', FALSE);
-	
-  if (empty($memcache) || !$cache_method = PHPExcel_CachedObjectStorageFactory::cache_to_memcache) {
-		$cache_method = PHPExcel_CachedObjectStorageFactory::cache_in_memory_gzip;
-		
-		$cache_settings = array();
+
+  // Determine caching method.
+  $cache_settings = array();
+  switch (variable_get('phpexcel_cache_mechanism')) {
+    case 'cache_in_memory_serialized':
+      $cache_method = PHPExcel_CachedObjectStorageFactory::cache_in_memory_serialized;
+      break;
+
+    case 'cache_in_memory_gzip':
+      $cache_method = PHPExcel_CachedObjectStorageFactory::cache_in_memory_gzip;
+      break;
+
+    case 'cache_to_phpTemp':
+      $cache_method = PHPExcel_CachedObjectStorageFactory::cache_to_phpTemp;
+      $cache_settings = array(
+        'memoryCacheSize' => variable_get('phpexcel_phptemp_limit', 1) . 'MB'
+      );
+      break;
+
+    case 'cache_to_apc':
+      $cache_method = PHPExcel_CachedObjectStorageFactory::cache_to_apc;
+      $cache_settings = array(
+        'cacheTime' => variable_get('phpexcel_apc_cachetime', '600')
+      );
+      break;
+
+    case 'cache_to_memcache':
+      $cache_method = PHPExcel_CachedObjectStorageFactory::cache_to_memcache;
+      $cache_settings = array(
+        'memcacheServer' => variable_get('phpexcel_memcache_host', 'localhost'),
+        'memcachePort' => variable_get('phpexcel_memcache_port', '11211'),
+        'cacheTime' => variable_get('phpexcel_memcache_cachetime', '600')
+      );
+      break;
+
+    case 'cache_to_sqlite3':
+      $cache_method = PHPExcel_CachedObjectStorageFactory::cache_to_memcache;
+      break;
+
+    default:
+      $cache_method = PHPExcel_CachedObjectStorageFactory::cache_in_memory;
+      break;
+  }
+
+  // Is it available ? If not, return an error.
+  if (empty($cache_method)) {
+		return PHPEXCEL_CACHING_METHOD_UNAVAILABLE;
 	}
-	else {
-		$cache_settings = array('memcacheServer'  => $memcache);
-	}
-  
+
   PHPExcel_Settings::setCacheStorageMethod($cache_method, $cache_settings);
 	
 	// Must we render from a template file ?
@@ -185,21 +222,25 @@ function _phpexcel_set_headers($xls, &$headers, $options) {
 	
 	phpexcel_invoke('export', 'headers', $headers, $xls, $options);
 	
-	$sheet_id = 1;
-	
+	$sheet_id = 0;
 	foreach ($headers as $sheet_name => $sheet_headers) {
-		$xls->createSheet($sheet_id);
+    if ($sheet_id) {
+      $xls->createSheet($sheet_id);
+      $sheet = $xls->setActiveSheetIndex($sheet_id);
+    }
+    else {
+      // PHPExcel always creates one sheet.
+      $sheet = $xls->getSheet();
+    }
+
+    if (!is_numeric($sheet_name)) {
+      $sheet->setTitle($sheet_name);
+    }
+    else {
+      $sheet->setTitle(t("Worksheet !id", array('!id' => ($sheet_id + 1))));
+    }
 		
 		phpexcel_invoke('export', 'new sheet', $sheet_id, $xls, $options);
-		
-		$sheet = $xls->setActiveSheetIndex($sheet_id);
-
-		if (!is_numeric($sheet_name)) {
-			$sheet->setTitle($sheet_name);
-		}
-		else {
-			$sheet->setTitle("Worksheet $sheet_id");
-		}
 
 		for ($i = 0, $len = count($sheet_headers); $i < $len; $i++) {
 			$value = trim($sheet_headers[$i]);
@@ -227,25 +268,29 @@ function _phpexcel_set_columns($xls, &$data, $headers = NULL, $options = array()
 	
 	phpexcel_invoke('export', 'data', $data, $xls, $options);
 	
-	$sheet_id = 1;
-	
+	$sheet_id = 0;
 	foreach ($data as $sheet_name => $sheet_data) {
 		// If the headers are not set, we haven't created any sheets yet.
 		// Create them now.
 		if (!isset($headers)) {
 			$offset = 1;
-			$xls->createSheet($sheet_id);
-		
-			phpexcel_invoke('export', 'new sheet', $sheet_id, $xls, $options);
-			
-			$sheet = $xls->setActiveSheetIndex($sheet_id);
+      if ($sheet_id) {
+			  $xls->createSheet($sheet_id);
+        $sheet = $xls->setActiveSheetIndex($sheet_id);
+      }
+      else {
+        // PHPExcel always creates one sheet.
+        $sheet = $xls->getSheet();
+      }
 
 			if (!is_numeric($sheet_name)) {
 				$sheet->setTitle($sheet_name);
 			}
 			else {
-				$sheet->setTitle("Worksheet $sheet_id");
+				$sheet->setTitle(t("Worksheet !id", array('!id' => ($sheet_id + 1))));
 			}
+
+      phpexcel_invoke('export', 'new sheet', $sheet_id, $xls, $options);
 		}
 		else {
 			$offset = 2;
