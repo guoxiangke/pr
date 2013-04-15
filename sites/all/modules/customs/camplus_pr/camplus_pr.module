@@ -131,11 +131,61 @@ function camplus_pr_theme() {
  */
 function camplus_pr_form_alter(&$form, &$form_state, $form_id) {
   $forms = array('camplus_pr_range_settings_form','camplus_pr_roles_involved_settings_form');
+
 	if(in_array($form_id, $forms)){
     drupal_add_css(drupal_get_path('module', 'camplus_pr').'/camplus_pr.css');
   }
+  if($form_id =='purchase_request_node_form'){
+    $form['field_budget_items']['#ajax'] = array(
+      'callback' => 'ajax_get_bi_mixable_amount_callback',
+      'wrapper' => 'checkboxes-div',
+      'method' => 'replace',
+      'effect' => 'fade',
+    );
+  }
+    dpm($form);
 }
+/**
+ * Callback element needs only select the portion of the form to be updated.
+ * Since #ajax['callback'] return can be HTML or a renderable array (or an
+ * array of commands), we can just return a piece of the form.
+ */
+function ajax_get_bi_mixable_amount_callback($form, $form_state) {
+  dpm($form_state['values']);
+  {
+  //  $commands[] = ajax_command_remove('#' . $form['#id']);
+  }
+  return array('#type' => 'ajax', '#commands' => $commands);
+}
+function camplus_pr_field_widget_form_alter(&$element, &$form_state, $context) {
+  //field_budget_items
+  //必须是当前年份的预算项目
+  if(isset($element['#field_name']) && $element['#field_name'] == 'field_budget_items') {
 
+    $budget_items = $element['#options'];
+    foreach ($budget_items as $budget_item_nid => $title) {
+      
+      $node = node_load($budget_item_nid);
+      if(!isset($node->field_financial_year[LANGUAGE_NONE][0]['value']) || $node->field_financial_year[LANGUAGE_NONE][0]['value'] != camplus_pr_get_current_financial_year()){
+        // unset($element['#options'][$budget_item_nid]);
+      }
+    }
+  }
+
+
+}
+function camplus_pr_get_current_financial_year(){
+  $financial_year_begin = variable_get('camplus_pr_financial_year_begin', '09-01');
+  $financial_year_end = variable_get('camplus_pr_financial_year_end', '08-31');
+  //2014-08-31 00:00:00
+  $financial_year_end = strtotime(date('Y').'-'.$financial_year_end.' 23:59:59');
+  if(time()<=$financial_year_end) {
+    $financial_year =  date('Y').'-01-01 00:00:00';//2013学年度
+  }else{
+    $financial_year =  (date('Y')+1).'-01-01 00:00:00';//2013+1学年度
+  }
+  return  $financial_year;
+}
 function camplus_pr_approve_flag_generate($key) {
   $flags = array();
   // Exported flag: "Bookmarks".
