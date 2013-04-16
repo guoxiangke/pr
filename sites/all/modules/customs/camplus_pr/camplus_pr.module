@@ -135,28 +135,27 @@ function camplus_pr_form_alter(&$form, &$form_state, $form_id) {
 	if(in_array($form_id, $forms)){
     drupal_add_css(drupal_get_path('module', 'camplus_pr').'/camplus_pr.css');
   }
+
   if($form_id =='purchase_request_node_form'){
-    $form['field_budget_items']['#ajax'] = array(
-      'callback' => 'ajax_get_bi_mixable_amount_callback',
-      'wrapper' => 'checkboxes-div',
-      'method' => 'replace',
-      'effect' => 'fade',
+    drupal_add_js(drupal_get_path('module', 'camplus_pr').'/camplus_pr.js');
+    $form['bi_warning'] = array(
+      '#markup' => '1.您不能跨部门预算<br/>2.该部门的为负值，不可选择 <br/>3.不能超额',
+      '#weight' => -100,
+      '#prefix' => '<div id="bi_warning" class="messages warning">',
+      '#suffix' => '</div>',
     );
-  }
     dpm($form);
-}
-/**
- * Callback element needs only select the portion of the form to be updated.
- * Since #ajax['callback'] return can be HTML or a renderable array (or an
- * array of commands), we can just return a piece of the form.
- */
-function ajax_get_bi_mixable_amount_callback($form, $form_state) {
-  dpm($form_state['values']);
-  {
-  //  $commands[] = ajax_command_remove('#' . $form['#id']);
+    $form['#validate'][] = 'purchase_request_node_form_validate';
   }
-  return array('#type' => 'ajax', '#commands' => $commands);
+
 }
+function purchase_request_node_form_validate($form, &$form_state) {
+  $error_text= 'error';
+  $error_name = '123';
+  form_set_error($error_name, t($error_text));
+}
+
+
 function camplus_pr_field_widget_form_alter(&$element, &$form_state, $context) {
   //field_budget_items
   //必须是当前年份的预算项目
@@ -169,11 +168,41 @@ function camplus_pr_field_widget_form_alter(&$element, &$form_state, $context) {
       if(!isset($node->field_financial_year[LANGUAGE_NONE][0]['value']) || $node->field_financial_year[LANGUAGE_NONE][0]['value'] != camplus_pr_get_current_financial_year()){
         // unset($element['#options'][$budget_item_nid]);
       }
+      // $element['#options']['_none'] = t('- Select a value -');
+      // $element['#default_value'] = '_none';
+      $element['#ajax'] = array(
+        'callback' => 'ajax_get_bi_mixable_amount_callback',
+        'wrapper' => 'bi_warning',
+        'method' => 'replace',
+        'effect' => 'fade',
+      );
     }
   }
-
-
 }
+/**
+ * Implements hook_admin_path().
+ */
+function camplus_pr_admin_paths_alter(&$paths) {
+  $paths['node/add/purchase-request'] = FALSE;
+}
+/**
+ * Callback element needs only select the portion of the form to be updated.
+ * Since #ajax['callback'] return can be HTML or a renderable array (or an
+ * array of commands), we can just return a piece of the form.
+ */
+function ajax_get_bi_mixable_amount_callback($form, $form_state) {
+  dpm($form_state['values'],'why not the choose value of BI?');
+
+  {// todo 获取预算项目的max值
+   $commands[] = ajax_command_replace('#bi_warning', $html='<div id="bi_warning" class="messages warning">This BI余额=get_bis_info_all($budget_nid)[f] 可通用余额=get_bi_mixable_amount($bi_nid)<br/>目前为啥获取不到Budget Items的value呢？</div>', $settings = NULL);
+   //您不能跨部门选择
+   // 该部门的为负值，不可选择
+   //
+
+  }
+  return array('#type' => 'ajax', '#commands' => $commands);
+}
+
 function camplus_pr_get_current_financial_year(){
   $financial_year_begin = variable_get('camplus_pr_financial_year_begin', '09-01');
   $financial_year_end = variable_get('camplus_pr_financial_year_end', '08-31');
