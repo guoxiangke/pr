@@ -144,7 +144,6 @@ function camplus_pr_form_alter(&$form, &$form_state, $form_id) {
       '#prefix' => '<div id="bi_warning" class="messages warning">',
       '#suffix' => '</div>',
     );
-    dpm($form);
     $form['#validate'][] = 'purchase_request_node_form_validate';
   }
 
@@ -152,6 +151,7 @@ function camplus_pr_form_alter(&$form, &$form_state, $form_id) {
 function purchase_request_node_form_validate($form, &$form_state) {
   $error_text= 'error';
   $error_name = '123';
+  dpm($form_state['values']);
   form_set_error($error_name, t($error_text));
 }
 
@@ -159,15 +159,19 @@ function purchase_request_node_form_validate($form, &$form_state) {
 function camplus_pr_field_widget_form_alter(&$element, &$form_state, $context) {
   //field_budget_items
   //必须是当前年份的预算项目
+  //普通角色只能选择本部门的
+  //Groups audience == 普通角色所属部门
   if(isset($element['#field_name']) && $element['#field_name'] == 'field_budget_items') {
 
     $budget_items = $element['#options'];
+    global $user;
     foreach ($budget_items as $budget_item_nid => $title) {
       
       $node = node_load($budget_item_nid);
       if(!isset($node->field_financial_year[LANGUAGE_NONE][0]['value']) || $node->field_financial_year[LANGUAGE_NONE][0]['value'] != camplus_pr_get_current_financial_year()){
-        // unset($element['#options'][$budget_item_nid]);
+        unset($element['#options'][$budget_item_nid]);
       }
+
       // $element['#options']['_none'] = t('- Select a value -');
       // $element['#default_value'] = '_none';
       $element['#ajax'] = array(
@@ -184,23 +188,48 @@ function camplus_pr_field_widget_form_alter(&$element, &$form_state, $context) {
  */
 function camplus_pr_admin_paths_alter(&$paths) {
   $paths['node/add/purchase-request'] = FALSE;
+  $paths['node/%node/edit'] = FALSE;
 }
 /**
  * Callback element needs only select the portion of the form to be updated.
  * Since #ajax['callback'] return can be HTML or a renderable array (or an
  * array of commands), we can just return a piece of the form.
  */
-function ajax_get_bi_mixable_amount_callback($form, $form_state) {
-  dpm($form_state['values'],'why not the choose value of BI?');
+function ajax_get_bi_mixable_amount_callback($form, &$form_state) {
+  // $form_state['rebuild'] = TRUE;
+  $field_budget_items = $form_state['values']['field_budget_items'][LANGUAGE_NONE];
+  $field_budget_items_amount = $form_state['values']['field_budget_items_amount'];
+  foreach ($field_budget_items as $key => $budget_nid) {
+    $bis_info_all = get_bis_info_all($budget_nid['target_id']);
+    // $mixable_amount = get_bi_mixable_amount($budget_nid['target_id']);
+    $output .= $budget_nid['target_id'].'-->'.$bis_info_all['g'].'-->'.$bis_info_all['f'].'<br/>';
+  }
+  //user input value > max mix value
+
+  dpm($form_state['values']['field_budget_items'],'why not the choose value of BI?');
 
   {// todo 获取预算项目的max值
-   $commands[] = ajax_command_replace('#bi_warning', $html='<div id="bi_warning" class="messages warning">This BI余额=get_bis_info_all($budget_nid)[f] 可通用余额=get_bi_mixable_amount($bi_nid)<br/>目前为啥获取不到Budget Items的value呢？</div>', $settings = NULL);
+   $commands[] = ajax_command_replace('#bi_warning', $html='<div id="bi_warning" class="messages warning">budget_nid-->This BI余额--->可通用余额<br/>'.$output.'</div>', $settings = NULL);
    //您不能跨部门选择
    // 该部门的为负值，不可选择
-   //
-
   }
   return array('#type' => 'ajax', '#commands' => $commands);
+}
+
+/**
+ * Implements hook_init().
+ */
+function camplus_pr_init() {
+  $GLOBALS['debug'] = FALSE;
+  $public_groups = druedu_user_get_nodes_by_group('school_department');
+  $variables = array();
+  foreach ($public_groups as $g_nid => $g_node) {
+    $all_subjects_node = camplus_pr_get_bis_by_year($g_nid,$financial_year = NULL);
+    foreach ($all_subjects_node as $s_nid => $s_node) {
+      $variables[$s_nid] = get_bi_mixable_amount($s_nid); 
+    }
+  }
+  drupal_add_js(array('camplus_pr' => $variables), 'setting');
 }
 
 function camplus_pr_get_current_financial_year(){
@@ -337,6 +366,7 @@ function node_access4camplus_pr($op, $node, $account = NULL) {
  * @see flag_flag:access()
  */
 function camplus_pr_flag_access($flag, $content_id, $action, $account) {
+  global $debug;
   if($flag->name == 'cancel' || $flag->name == 'paid') {
     $node = node_load($content_id);
     // if($node->uid != $account->uid) return;
@@ -344,19 +374,19 @@ function camplus_pr_flag_access($flag, $content_id, $action, $account) {
     $widget = _camplus_pr_get_approve_rate($node);
     if(!isset($widget->id)) return;
     $approve_status = _rate_pr_check_permissions($node,$widget);
-    dpm($approve_status);
+    if($debug) dpm($approve_status);
     //已经标记Cancel，不可再标记Paid
     if($flag->name == 'paid' && isset($approve_status['flags']['cancel']) && $approve_status['flags']['cancel'] ){
-      dpm('已经标记Cancel，不可再标记Paid',__LINE__);
+      if($debug) dpm('已经标记Cancel，不可再标记Paid',__LINE__);
       return FALSE;
     }
     if($flag->name == 'cancel' && isset($approve_status['flags']['paid']) && $approve_status['flags']['paid'] ){
-      dpm('已经标记Paid，不可再标记Cancel',__LINE__);
+      if($debug) dpm('已经标记Paid，不可再标记Cancel',__LINE__);
       return FALSE;
     }
     //还未全部审核/REJECT，manager不可标记paid
     if($flag->name == 'paid' &&($approve_status['workflow_status'] == 'pending' ||$approve_status['workflow_status'] == 'reject')){
-      dpm('还未全部审核，manager不可标记paid!',__LINE__);
+      if($debug) dpm('还未全部审核，manager不可标记paid!',__LINE__);
       return FALSE;
     }
     //是否可以Cancel与审核状态无关。

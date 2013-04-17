@@ -51,6 +51,7 @@ function rate_pr_node_view($node, $view_mode, $langcode) {
 function _rate_pr_check_permissions($node, $widget, $user = NULL) {
 	if($node->type != 'purchase_request') return FALSE;
 	if(!$user) global $user;
+  global $debug;
   $approve_status['flags'] = flag_get_counts('node', $node->nid, $reset = FALSE);
   //确定角色和第几级审批设定
   {
@@ -79,13 +80,13 @@ function _rate_pr_check_permissions($node, $widget, $user = NULL) {
     if($rate_results['options']['-1']) {   //attention -1,can not change.
     //即有人选择reject，审核不通过
       $approve_status['workflow_status'] = 'reject';
-       dpm('审核不通过,即有人选择');
+      if($debug) dpm('审核不通过,即有人选择');
     }elseif($rate_results['options']['1'] == count(array_filter($workflow_settings))){//all choosed approve,审核通过
       $approve_status['workflow_status'] = 'approved';
-       dpm('审核通过');
+       if($debug) dpm('审核通过');
     }else{//审核中
        $approve_status['workflow_status'] = 'pending';
-       dpm('审核中');
+       if($debug) dpm('审核中');
     }
     //确定角色
     $camplus_pr_approvable_role_involved = array_keys(variable_get('camplus_pr_approvable_role_involved'));
@@ -138,14 +139,14 @@ function _rate_pr_check_permissions($node, $widget, $user = NULL) {
       
       $approve_status['permit_flag'] = $flag_role_involved;
 
-      dvm($flag_role_involved,'true means the header is member of the right department has permission to vote');
+      if($debug) dvm($flag_role_involved,'true means the header is member of the right department has permission to vote');
     }else { //if($role != $first_head)  // other roles, Non-Department specific.
-      dpm($role,'my involed role '.$rid);
+      if($debug) dpm($role,'my involed role '.$rid);
       // $rid = user_role_load_by_name($role_name)->rid;
       if($workflow_settings[$rid]) { //判定workflow是否设置该部门审核
         if($rate_results['count'] == 0) {//no rates.
           $approve_status['permit_flag'] = FALSE;
-          dpm($role .' has no! right to check/approve AS the workflow settings,for no one before has rate.:没有权限审核，需等待之前的部门先审核。现在该PR没有任何人审核!');
+          if($debug) dpm($role .' has no! right to check/approve AS the workflow settings,for no one before has rate.:没有权限审核，需等待之前的部门先审核。现在该PR没有任何人审核!');
           return $approve_status;
         }else {
           //只要之前部门，有一个不同意，本部门将看不到rate
