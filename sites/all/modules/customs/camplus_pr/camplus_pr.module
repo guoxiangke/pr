@@ -149,41 +149,49 @@ function camplus_pr_form_alter(&$form, &$form_state, $form_id) {
 
 }
 function purchase_request_node_form_validate($form, &$form_state) {
-  $form_state['rebuild'] = TRUE;
   $error_text= 'error';
   $error_name = '123';
-  dpm($form_state['values']);
+  // dpm($form_state['values']);
   form_set_error($error_name, t($error_text));
 }
 
 
 function camplus_pr_field_widget_form_alter(&$element, &$form_state, $context) {
-  $form_state['rebuild'] = TRUE;
   //field_budget_items
   //必须是当前年份的预算项目
   //普通角色只能选择本部门的
   //Groups audience == 普通角色所属部门
   if(isset($element['#field_name']) && $element['#field_name'] == 'field_budget_items') {
-
-    $budget_items = $element['#options'];
-    global $user;
-    foreach ($budget_items as $budget_item_nid => $title) {
-      
-      $node = node_load($budget_item_nid);
-      if(!isset($node->field_financial_year[LANGUAGE_NONE][0]['value']) || $node->field_financial_year[LANGUAGE_NONE][0]['value'] != camplus_pr_get_current_financial_year()){
-        unset($element['#options'][$budget_item_nid]);
-      }
-
-      // $element['#options']['_none'] = t('- Select a value -');
-      // $element['#default_value'] = '_none';
-      $element['#ajax'] = array(
-        'callback' => 'ajax_get_bi_mixable_amount_callback',
-        'wrapper' => 'bi_warning',
-        'method' => 'replace',
-        'effect' => 'fade',
-      );
-    }
+    $element['#ajax'] = array(
+      'callback' => 'ajax_get_bi_mixable_amount_callback',
+      'wrapper' => 'bi_warning',
+      'method' => 'replace',
+      'effect' => 'fade',
+    );
+    // if (!isset($element['#process'])) {
+    //   $element['#process'] = array();
+    // }
+    // array_unshift($element['#process'], 'form_process_field_budget_items');
   }
+}
+function form_process_field_budget_items(&$element) {
+  dpm($element);
+  
+    // $budget_items = $element['#options'];
+    // global $user;
+    // foreach ($budget_items as $budget_item_nid => $title) {
+      
+    //   $node = node_load($budget_item_nid);
+    //   if(!isset($node->field_financial_year[LANGUAGE_NONE][0]['value']) || $node->field_financial_year[LANGUAGE_NONE][0]['value'] != camplus_pr_get_current_financial_year()){
+    //     // unset($element['#options'][$budget_item_nid]);
+    //   }
+
+    //   // $element['#options']['_none'] = t('- Select a value -');
+    //   // $element['#default_value'] = '_none';
+
+    // }
+
+  return  $element;
 }
 /**
  * Implements hook_admin_path().
@@ -199,6 +207,8 @@ function camplus_pr_admin_paths_alter(&$paths) {
  */
 function ajax_get_bi_mixable_amount_callback($form, &$form_state) {
   // $form_state['rebuild'] = TRUE;
+  dpm($form_state['values']['field_budget_items'],'why not the choose value of BI?');
+
   $field_budget_items = $form_state['values']['field_budget_items'][LANGUAGE_NONE];
   $field_budget_items_amount = $form_state['values']['field_budget_items_amount'];
   foreach ($field_budget_items as $key => $budget_nid) {
@@ -208,7 +218,7 @@ function ajax_get_bi_mixable_amount_callback($form, &$form_state) {
   }
   //user input value > max mix value
 
-  dpm($form_state['values']['field_budget_items'],'why not the choose value of BI?');
+  // dpm($form_state['values']['field_budget_items'],'why not the choose value of BI?');
 
   {// todo 获取预算项目的max值
    $commands[] = ajax_command_replace('#bi_warning', $html='<div id="bi_warning" class="messages warning">budget_nid-->This BI余额--->可通用余额<br/>'.$output.'</div>', $settings = NULL);
