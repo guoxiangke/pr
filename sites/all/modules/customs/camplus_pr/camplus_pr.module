@@ -105,6 +105,10 @@ function camplus_pr_permission() {
       'title' => t('Camplus BI Settings'),//书记 权限 预算设置
       'restrict access' => TRUE,
     ),
+    'camplus budget cross sectoral' =>  array(
+      'title' => t('跨部门 add 预算 '),//跨部门 add 预算 
+      'restrict access' => TRUE,
+    ),
    );
 }
 /**
@@ -149,10 +153,39 @@ function camplus_pr_form_alter(&$form, &$form_state, $form_id) {
 
 }
 function purchase_request_node_form_validate($form, &$form_state) {
-  $error_text= 'error';
-  $error_name = '123';
-  // dpm($form_state['values']);
-  form_set_error($error_name, t($error_text));
+
+  dpm($form_state);
+  // Budget Items field && Budget Items amount field validate
+  if($form_state['input']['fgm_node_purchase_request_form_group_budgets']['fields'])
+  foreach ($form_state['input']['fgm_node_purchase_request_form_group_budgets']['fields'] as $key1 => $variable) {
+    foreach ($variable as $key => $value) {
+      if($value['field_budget_items']['und']=='_none' && $value['field_budget_items_amount']['und']['value']) {
+        form_set_error('og_group_ref[und]['.$key1.'][default]', t('Budget Items field is required. for Budget Items amount has value'));
+      }
+      if(!$value['field_budget_items_amount']['und']['value'] && $value['field_budget_items']['und']!='_none') {
+        form_set_error('og_group_ref[und]['.$key1.'][default]', t('Budget Items amount field is required. for Budget Items has value'));
+      }
+      $field_budget_items[$key] = $value['field_budget_items']['und'];
+      // get department!
+      $department[] = node_load($field_budget_items[$key])->field_parents_department[LANGUAGE_NONE][0]['target_id'];
+      //不能重复选择部门
+      if(count(array_unique($field_budget_items)) != count($field_budget_items)) {
+        form_set_error('[field_budget_items_amount][und][value]', t('Budget Items repeated!'));
+      }
+      $field_budget_items_amounts[$key] = $value['field_budget_items_amount']['und']['value'];
+      if($field_budget_items_amounts[$key] > get_bi_mixable_amount($field_budget_items[$key])) {
+        form_set_error('[field_budget_items_amount][und][value]', t('不能超额'));
+      }
+    }
+  }
+  //您不能跨部门预算
+  if(count(array_unique($department))!=1){
+     form_set_error('[field_budget_items_amount][und][value]', t('您不能跨部门预算'));
+  }
+  // Budget Items field && Budget Items amount field validate end
+
+  dpm($field_budget_items,'$field_budget_items');
+  dpm($field_budget_items_amounts,'$field_budget_items_amounts');
 }
 
 
@@ -161,36 +194,53 @@ function camplus_pr_field_widget_form_alter(&$element, &$form_state, $context) {
   //必须是当前年份的预算项目
   //普通角色只能选择本部门的
   //Groups audience == 普通角色所属部门
-  if(isset($element['#field_name']) && $element['#field_name'] == 'field_budget_items') {
-    $element['#ajax'] = array(
-      'callback' => 'ajax_get_bi_mixable_amount_callback',
-      'wrapper' => 'bi_warning',
-      'method' => 'replace',
-      'effect' => 'fade',
-    );
-    // if (!isset($element['#process'])) {
-    //   $element['#process'] = array();
-    // }
-    // array_unshift($element['#process'], 'form_process_field_budget_items');
-  }
+  // if(isset($element['#field_name']) && $element['#field_name'] == 'field_budget_items') {
+  //   $element['#ajax'] = array(
+  //     'callback' => 'ajax_get_bi_mixable_amount_callback',
+  //     'wrapper' => 'bi_warning',
+  //     'method' => 'replace',
+  //     'effect' => 'fade',
+  //   );
+    if (!isset($element['#process'])) {
+      $element['#process'] = array();
+    }
+    array_unshift($element['#process'], 'form_process_field_budget_items');
 }
 function form_process_field_budget_items(&$element) {
-  dpm($element);
-  
-    // $budget_items = $element['#options'];
-    // global $user;
-    // foreach ($budget_items as $budget_item_nid => $title) {
-      
-    //   $node = node_load($budget_item_nid);
-    //   if(!isset($node->field_financial_year[LANGUAGE_NONE][0]['value']) || $node->field_financial_year[LANGUAGE_NONE][0]['value'] != camplus_pr_get_current_financial_year()){
-    //     // unset($element['#options'][$budget_item_nid]);
-    //   }
 
-    //   // $element['#options']['_none'] = t('- Select a value -');
-    //   // $element['#default_value'] = '_none';
+    if(strpos($element['#id'], 'field-budget-items-und')  !== FALSE ) {
+        //如果角色不是管理角色，只显示所属部门的子预算项目
+        if(!user_access('camplus budget cross sectoral')) { //
+          // Load in the current user's group entity ID's
+          $groups = og_get_entity_groups();
+          // Load the entities object ID's
+          $nodes = node_load_multiple($groups['node']);
+          foreach ($nodes as $key => $node) {
+            if($node->type == 'school_department'){
+              $department[] = $key;
+              // break;
+            }else{
+              continue;
+            }
+        }
 
-    // }
+        $budget_items = $element['#options'];
+        global $user;
+        if(isset($budget_items) && is_array($budget_items))
+        foreach ($budget_items as $budget_item_nid => $title) {
+          
+          $node = node_load($budget_item_nid);
+          //去除不是当前学年的
+          if(!isset($node->field_financial_year[LANGUAGE_NONE][0]['value']) || $node->field_financial_year[LANGUAGE_NONE][0]['value'] != camplus_pr_get_current_financial_year() || !in_array($node->field_parents_department[LANGUAGE_NONE][0]['target_id'], $department)){
+            unset($element['#options'][$budget_item_nid]);
+          }
 
+          // $element['#options']['_none'] = t('- Select a value -');
+          // $element['#default_value'] = '_none';
+
+        }
+      }
+    }
   return  $element;
 }
 /**
@@ -207,7 +257,7 @@ function camplus_pr_admin_paths_alter(&$paths) {
  */
 function ajax_get_bi_mixable_amount_callback($form, &$form_state) {
   // $form_state['rebuild'] = TRUE;
-  dpm($form_state['values']['field_budget_items'],'why not the choose value of BI?');
+  dpm($form_state['input'],'why not the choose value of BI?');
 
   $field_budget_items = $form_state['values']['field_budget_items'][LANGUAGE_NONE];
   $field_budget_items_amount = $form_state['values']['field_budget_items_amount'];
