@@ -143,7 +143,7 @@ function camplus_pr_form_alter(&$form, &$form_state, $form_id) {
   if($form_id =='purchase_request_node_form'){
     drupal_add_js(drupal_get_path('module', 'camplus_pr').'/camplus_pr.js');
     $form['bi_warning'] = array(
-      '#markup' => '1.您不能跨部门预算<br/>2.该部门的为负值，不可选择 <br/>3.不能超额',
+      '#markup' => '1.您不能跨部门预算<br/>2.最大余额为负时,默认隐藏该预算项目 <br/>3.不能超过通用余额',
       '#weight' => -100,
       '#prefix' => '<div id="bi_warning" class="messages warning">',
       '#suffix' => '</div>',
@@ -153,29 +153,40 @@ function camplus_pr_form_alter(&$form, &$form_state, $form_id) {
 
 }
 function purchase_request_node_form_validate($form, &$form_state) {
-
-  dpm($form_state);
   // Budget Items field && Budget Items amount field validate
+  $department = array();
   if($form_state['input']['fgm_node_purchase_request_form_group_budgets']['fields'])
   foreach ($form_state['input']['fgm_node_purchase_request_form_group_budgets']['fields'] as $key1 => $variable) {
     foreach ($variable as $key => $value) {
       if($value['field_budget_items']['und']=='_none' && $value['field_budget_items_amount']['und']['value']) {
-        form_set_error('og_group_ref[und]['.$key1.'][default]', t('Budget Items field is required. for Budget Items amount has value'));
+        form_set_error('og_group_ref[und]['.$key1.'][default]', t('Budget Items field 必填，因另一个有值！'));
       }
       if(!$value['field_budget_items_amount']['und']['value'] && $value['field_budget_items']['und']!='_none') {
-        form_set_error('og_group_ref[und]['.$key1.'][default]', t('Budget Items amount field is required. for Budget Items has value'));
+        form_set_error('og_group_ref[und]['.$key1.'][default]', t('Budget Items amount必填，因另一个有值！'));
       }
       $field_budget_items[$key] = $value['field_budget_items']['und'];
+      if($field_budget_items[$key] == '_none') {
+        form_set_error('[field_budget_items_amount][und][value]', t('预算项目请选择一个值'));
+        break;
+      }
+
       // get department!
-      $department[] = node_load($field_budget_items[$key])->field_parents_department[LANGUAGE_NONE][0]['target_id'];
+      if($node = node_load($field_budget_items[$key]))
+      $department[] = $node->field_parents_department[LANGUAGE_NONE][0]['target_id'];
       //不能重复选择部门
       if(count(array_unique($field_budget_items)) != count($field_budget_items)) {
         form_set_error('[field_budget_items_amount][und][value]', t('Budget Items repeated!'));
       }
+
       $field_budget_items_amounts[$key] = $value['field_budget_items_amount']['und']['value'];
-      if($field_budget_items_amounts[$key] > get_bi_mixable_amount($field_budget_items[$key])) {
-        form_set_error('[field_budget_items_amount][und][value]', t('不能超额'));
+      $bis_info_all = get_bis_info_all($field_budget_items[$key]);
+      if($bis_info_all['f']<=0) {//最大余额 
+        form_set_error('[field_budget_items_amount][und][value]', t('最大余额为负时,不能预算！'));
       }
+      if($field_budget_items_amounts[$key] > $bis_info_all['g']) {//通用余额  get_bi_mixable_amount($field_budget_items[$key]
+        form_set_error('[field_budget_items_amount][und][value]', t('不能超过通用余额'));
+      }
+
     }
   }
   //您不能跨部门预算
@@ -183,9 +194,10 @@ function purchase_request_node_form_validate($form, &$form_state) {
      form_set_error('[field_budget_items_amount][und][value]', t('您不能跨部门预算'));
   }
   // Budget Items field && Budget Items amount field validate end
-
-  dpm($field_budget_items,'$field_budget_items');
-  dpm($field_budget_items_amounts,'$field_budget_items_amounts');
+ 
+  // devel 显示用户输入值
+  // dpm($field_budget_items,'$field_budget_items');
+  // dpm($field_budget_items_amounts,'$field_budget_items_amounts');
 }
 
 
@@ -230,13 +242,23 @@ function form_process_field_budget_items(&$element) {
         foreach ($budget_items as $budget_item_nid => $title) {
           
           $node = node_load($budget_item_nid);
+
+          if(!$node) continue;
           //去除不是当前学年的
           if(!isset($node->field_financial_year[LANGUAGE_NONE][0]['value']) || $node->field_financial_year[LANGUAGE_NONE][0]['value'] != camplus_pr_get_current_financial_year() || !in_array($node->field_parents_department[LANGUAGE_NONE][0]['target_id'], $department)){
             unset($element['#options'][$budget_item_nid]);
           }
+          $bis_info = get_bis_info_all($budget_item_nid);
+          if($bis_info['f'] <= 0) {
+            unset($element['#options'][$budget_item_nid]); 
+          }
+          // if($bis_info['g'] == 0) {
+          //   dpm('通用余额为0,不可再做预算！');
+          //   unset($element['#options'][$budget_item_nid]); 
+          // }
 
-          // $element['#options']['_none'] = t('- Select a value -');
-          // $element['#default_value'] = '_none';
+          $element['#options']['_none'] = t('- Select a value -');
+          $element['#default_value'] = '_none';
 
         }
       }
@@ -255,28 +277,28 @@ function camplus_pr_admin_paths_alter(&$paths) {
  * Since #ajax['callback'] return can be HTML or a renderable array (or an
  * array of commands), we can just return a piece of the form.
  */
-function ajax_get_bi_mixable_amount_callback($form, &$form_state) {
-  // $form_state['rebuild'] = TRUE;
-  dpm($form_state['input'],'why not the choose value of BI?');
+// function ajax_get_bi_mixable_amount_callback_delete($form, &$form_state) {
+//   // $form_state['rebuild'] = TRUE;
+//   dpm($form_state['input'],'why not the choose value of BI?');
 
-  $field_budget_items = $form_state['values']['field_budget_items'][LANGUAGE_NONE];
-  $field_budget_items_amount = $form_state['values']['field_budget_items_amount'];
-  foreach ($field_budget_items as $key => $budget_nid) {
-    $bis_info_all = get_bis_info_all($budget_nid['target_id']);
-    // $mixable_amount = get_bi_mixable_amount($budget_nid['target_id']);
-    $output .= $budget_nid['target_id'].'-->'.$bis_info_all['g'].'-->'.$bis_info_all['f'].'<br/>';
-  }
-  //user input value > max mix value
+//   $field_budget_items = $form_state['values']['field_budget_items'][LANGUAGE_NONE];
+//   $field_budget_items_amount = $form_state['values']['field_budget_items_amount'];
+//   foreach ($field_budget_items as $key => $budget_nid) {
+//     $bis_info_all = get_bis_info_all($budget_nid['target_id']);
+//     // $mixable_amount = get_bi_mixable_amount($budget_nid['target_id']);
+//     $output .= $budget_nid['target_id'].'-->'.$bis_info_all['g'].'-->'.$bis_info_all['f'].'<br/>';
+//   }
+//   //user input value > max mix value
 
-  // dpm($form_state['values']['field_budget_items'],'why not the choose value of BI?');
+//   // dpm($form_state['values']['field_budget_items'],'why not the choose value of BI?');
 
-  {// todo 获取预算项目的max值
-   $commands[] = ajax_command_replace('#bi_warning', $html='<div id="bi_warning" class="messages warning">budget_nid-->This BI余额--->可通用余额<br/>'.$output.'</div>', $settings = NULL);
-   //您不能跨部门选择
-   // 该部门的为负值，不可选择
-  }
-  return array('#type' => 'ajax', '#commands' => $commands);
-}
+//   {// todo 获取预算项目的max值
+//    $commands[] = ajax_command_replace('#bi_warning', $html='<div id="bi_warning" class="messages warning">budget_nid-->This BI余额--->可通用余额<br/>'.$output.'</div>', $settings = NULL);
+//    //您不能跨部门选择
+//    // 该部门的为负值，不可选择
+//   }
+//   return array('#type' => 'ajax', '#commands' => $commands);
+// }
 
 /**
  * Implements hook_init().
@@ -291,6 +313,7 @@ function camplus_pr_init() {
       $variables[$s_nid] = get_bi_mixable_amount($s_nid); 
     }
   }
+  $variables['_none'] = 0; 
   drupal_add_js(array('camplus_pr' => $variables), 'setting');
 }
 
@@ -367,11 +390,17 @@ function camplus_pr_get_bis_by_year($department_nid, $financial_year = NULL) {
 
   $query = db_select('field_data_field_financial_year', 'f');
   $query->join('node','n','n.nid = f.entity_id');
+
+      // $query = db_select('og_membership', 'og');
+    $query->join('og_membership','og','n.nid = og.etid');
+
   $nids = $query
     ->fields('f', array('entity_id'))//nid
     ->condition('n.type ','budget_item')
     ->condition('f.field_financial_year_value',$financial_year)
     
+    ->condition('og.gid ',$department_nid)//$gid
+
     ->condition('n.status',1)
     ->orderBy('n.created ', 'ASC')
     ->execute();
@@ -635,7 +664,7 @@ function get_bis_info_all($budget_nid) {
     $row_e = $node->field_pr_allowance[LANGUAGE_NONE][0]['value'];
     $row['e'] = $row_e;
   }else{
-    // $row_e = 0;
+    $row_e = 0;
     $row['e'] = 0;
   }
   $row['f'] = sprintf("%01.2f", $row_d + $row_e);//max余额

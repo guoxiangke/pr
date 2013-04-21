@@ -348,6 +348,7 @@ function camplus_pr_budget_settings_form() {
     $financial_year = NULL;
   }
   $public_groups = druedu_user_get_nodes_by_group('school_department');
+
   foreach ($public_groups as $g_nid => $g_node) {
     $groups[$g_nid]['gid'] = $g_nid;
     $groups[$g_nid]['depth'] = 0;
@@ -361,7 +362,7 @@ function camplus_pr_budget_settings_form() {
       $groups[$s_nid]['gid'] = $s_nid;
       $groups[$s_nid]['depth'] = 1;
       $groups[$s_nid]['parent'] = $g_nid;
-      $groups[$g_nid]['type'] = 'budget_item';
+      $groups[$s_nid]['type'] = 'budget_item';
       $groups[$s_nid]['name'] = $s_node->title;
     }
   }
@@ -416,7 +417,6 @@ function camplus_pr_budget_settings_form() {
     $order++;
 
   }
-  camplus_pr_get_prs(4, $uid = NULL);
   return $form;
 }
 
@@ -478,12 +478,14 @@ function theme_camplus_pr_budget_settings_form($variables) {
        //已批支出 get all PRs
         $budget_nid = $gid;
         $prs = camplus_pr_get_prs($budget_nid);
-         // $prs = druedu_user_get_nodes_by_group($gid, $subject = null, $class = null, $grade_group_content = 'purchase_request');
+        // $prs = druedu_user_get_nodes_by_group($gid, $subject = null, $class = null, $grade_group_content = 'purchase_request');
 
          $pending = 0;
          $approved = 0;
          $rejectd = 0;
          // get  approved appending and rejectd
+
+         $widgets = rate_get_active_widgets('node', 'purchase_request');//$pr_node->type
          foreach ($prs as $nid => $pr_node) {
             // 排除canceled PRs
             $flags = flag_get_counts('node', $nid, $reset = FALSE);
@@ -491,8 +493,6 @@ function theme_camplus_pr_budget_settings_form($variables) {
                dpm('canceled pr:'.$nid,__LINE__);
                continue;
             }
-
-           $widgets = rate_get_active_widgets('node', $pr_node->type);
            //get pr item
            foreach ($pr_node->field_budget_items[LANGUAGE_NONE] as $key => $value) {
             if($value['target_id'] ==  $budget_nid) {
@@ -557,7 +557,6 @@ function theme_camplus_pr_budget_settings_form($variables) {
       $rows[$gid] = array('data' => $row, 'class' => array('draggable','locked'));
     }
   }
-    
   // Add drag and drop if parent fields are present in the form.
     drupal_add_tabledrag('groups_tree', 'match', 'parent', 'group-parent', 'group-parent', 'group-id', FALSE);
     drupal_add_tabledrag('groups_tree', 'depth', 'group', 'group-depth', NULL, NULL, FALSE);
