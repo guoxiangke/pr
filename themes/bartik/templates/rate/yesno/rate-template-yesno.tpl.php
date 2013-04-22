@@ -54,9 +54,21 @@ $feed_back_buttons = '<div class="qa-userful-buttons">
     ).'
   </span>
 </div>';
-if($results['count']) {
-  $feed_back_buttons = '';
-}
+    $widgets = rate_get_active_widgets('node', 'purchase_request');
+    foreach ($widgets as $widget_id => $widget) {
+      //没有权限时，清楚rate
+      $widget->id = $widget_id;
+      //一旦审核通过，所有审批部门角色不可更改即 not show rate.
+
+      if($widget->name == 'approve') {
+        $rate_results = rate_get_results('node', $content_id, $widget->id);
+        if(isset($rate_results['user_vote'])) {
+          $feed_back_buttons = '';
+        }
+        break;
+      }
+    }
+
 ?>
 
 <?php // print theme('item_list', array('items' => $buttons)); ?>

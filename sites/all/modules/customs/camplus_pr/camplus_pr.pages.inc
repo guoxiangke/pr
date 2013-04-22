@@ -432,6 +432,7 @@ function camplus_pr_budget_settings_form() {
  * @ingroup themeable
  */
 function theme_camplus_pr_budget_settings_form($variables) {
+  global $debug;
   $form = $variables['form'];
   $header = array(
     t('Budget item'),
@@ -490,7 +491,7 @@ function theme_camplus_pr_budget_settings_form($variables) {
             // 排除canceled PRs
             $flags = flag_get_counts('node', $nid, $reset = FALSE);
             if(isset($flags['cancel']) && $flags['cancel']){
-               dpm('canceled pr:'.$nid,__LINE__);
+              if($debug) dpm('canceled pr:'.$nid,__LINE__);
                continue;
             }
            //get pr item

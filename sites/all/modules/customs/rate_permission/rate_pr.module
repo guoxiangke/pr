@@ -18,12 +18,14 @@ function rate_pr_node_view($node, $view_mode, $langcode) {
       //没有权限时，清楚rate
       $widget->id = $widget_id;
       //一旦审核通过，所有审批部门角色不可更改即 not show rate.
+
       if($widget->name == 'approve') {
         $approve_status = _rate_pr_check_permissions($node,$widget);
+
+        $widget_name = 'rate_' . $widget->name;
         if(!$approve_status['permit_flag'] || !$show_flag) {
           // 根据PR节点的总额确定which审批流程
           // 在上一个审批流程没有确定前 其他后续
-          $widget_name = 'rate_' . $widget->name;
           if ($widget->node_display == RATE_DISPLAY_DISABLE) {
             unset($node->$widget_name);
           }
@@ -35,12 +37,6 @@ function rate_pr_node_view($node, $view_mode, $langcode) {
       }
     }
   //如果已经审核，或ing，不可编辑
-  }
-
-  global $user;
-  if(!$node->status &&$node->type ='purchase_request' && $user->uid == $node->uid){
-    $node->content['undraft'] = array('#markup'=>l('undraft','node/'.$node->nid.'/undraft'));
-    $node->content['edit'] = array('#markup'=>l('edit','node/'.$node->nid.'/edit'));
   }
 }
 //check approve workflow status:
@@ -77,6 +73,7 @@ function _rate_pr_check_permissions($node, $widget, $user = NULL) {
     $workflow_settings = $workflow_settings[$approve_rang];
     //
     $rate_results = rate_get_results('node', $node->nid, $widget->id);
+
     if($rate_results['options']['-1']) {   //attention -1,can not change.
     //即有人选择reject，审核不通过
       $approve_status['workflow_status'] = 'reject';
@@ -156,9 +153,9 @@ function _rate_pr_check_permissions($node, $widget, $user = NULL) {
          
           // delete the first role which is  Department specific
 
-          dpm($camplus_pr_approvable_role_weight,'role_weight');
-          dpm(array_filter($workflow_settings));
-          dpm($first_roles,'fist');
+          if($debug) dpm($camplus_pr_approvable_role_weight,'role_weight');
+          if($debug) dpm(array_filter($workflow_settings));
+          if($debug) dpm($first_roles,'fist');
 
           $before_role_counts = 0;
           foreach (array_filter($workflow_settings) as $w_rid => $value) {
@@ -168,18 +165,18 @@ function _rate_pr_check_permissions($node, $widget, $user = NULL) {
           $approve_status['before_role_counts'] = $before_role_counts;
           $approve_status['approved_counts'] = $rate_results['options']['1'];
           $approve_status['reject_counts'] = $rate_results['options']['-1'];
-          dpm( $rid.' '.$role.' 上面还有'.$before_role_counts.'级部门&&已经有'.$rate_results['options']['1'].'个部门同意了。');
+          if($debug) dpm( $rid.' '.$role.' 上面还有'.$before_role_counts.'级部门&&已经有'.$rate_results['options']['1'].'个部门同意了。');
           foreach (array_filter($workflow_settings) as $w_rid => $value) {
             if($w_rid == $first_roles->rid) continue;
             $other_roles = user_role_load($w_rid);
             //之前部门
             if ($camplus_pr_approvable_role_weight[$role] > $camplus_pr_approvable_role_weight[$other_roles->name]) {
-              dpm( $rid.' '.$role.' 的上面还有de部门是 '.$w_rid .' '. $other_roles->name);
+              if($debug) dpm( $rid.' '.$role.' 的上面还有de部门是 '.$w_rid .' '. $other_roles->name);
               $approve_status['approve_level_before'] = array($w_rid=> $other_roles->name);
               //只有1个，说明只要head部门审核了。
               if($rate_results['count'] == 1) {
                 $approve_status['permit_flag'] = FALSE;
-                dpm($role .' has no! right to check/approve AS the workflow settings,没有权限审核，需等待之前的部门先审核。现在该PR只有header审核guo!等待'.$other_roles->name.'审批');
+                if($debug) dpm($role .' has no! right to check/approve AS the workflow settings,没有权限审核，需等待之前的部门先审核。现在该PR只有header审核guo!等待'.$other_roles->name.'审批');
                 return $approve_status;
               }else {
                 //都选择同意&& 数量一致
@@ -187,7 +184,7 @@ function _rate_pr_check_permissions($node, $widget, $user = NULL) {
                   // true
                 }else{
                   $approve_status['permit_flag'] = FALSE;
-                  dpm($role .' has no! right to check/approve AS the workflow settings,:没有权限审核，需等待之前的部门先审核!');
+                  if($debug) dpm($role .' has no! right to check/approve AS the workflow settings,:没有权限审核，需等待之前的部门先审核!');
                   return $approve_status;
                 }
 
@@ -195,7 +192,7 @@ function _rate_pr_check_permissions($node, $widget, $user = NULL) {
             }
           }
 
-          dpm($role .' has right to check/approve,,rate_results: '.$rate_results['count']);
+          if($debug) dpm($role .' has right to check/approve,,rate_results: '.$rate_results['count']);
 
         }
         //TODO: and then check others before has approve or not.
@@ -204,7 +201,7 @@ function _rate_pr_check_permissions($node, $widget, $user = NULL) {
       }else{
         $approve_status['permit_flag'] = FALSE;
         // $flag_role_involved = FALSE;
-        dpm($role .' has no! right to check/approve AS the workflow settings????TODO');//没有在审核队列中
+        if($debug) dpm($role .' has no! right to check/approve AS the workflow settings????TODO');//没有在审核队列中
         return $approve_status;
       }
     }
@@ -212,26 +209,6 @@ function _rate_pr_check_permissions($node, $widget, $user = NULL) {
     $approve_status['permit_flag'] = $flag_role_involved;
     return $approve_status;
   }
-
-
-  if(0) {
-
-    //对每一级workflow的角色判断 如果一级尚未审批，则后续级别部门无权审批，及看不到vote
-
-
-
-    if($flag_role_involved && isset($workflow_settings[$pr_approve_setting.'-workflow-'.$rid])) {
-      //dpm('TRUE');
-      return $workflow_settings[$pr_approve_setting.'-workflow-'.$rid];
-    }else{  //dpm('FALSE');
-      return FALSE;
-    }
-
-    return $workflow_settings[$pr_approve_setting.'-workflow-'.$rid];
-
-  }
-
-
 }
 
 /**

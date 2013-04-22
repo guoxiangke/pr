@@ -68,7 +68,7 @@ function camplus_pr_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' =>-26,
   );
-  $items['admin/people/advanced_management/budget/settings'] = array(
+  $items['admin/config/camplus/advanced_management/budget/settings'] = array(
     'title' => 'Budget settings',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('camplus_pr_budget_settings_form'),
@@ -91,6 +91,26 @@ function camplus_pr_undraft($node) {
   $node->status = 1;
   node_save($node);
   drupal_goto('node/'.$node->nid);
+}
+/**
+ * Implements hook_node_view().
+ */
+function camplus_pr_node_view($node, $view_mode, $langcode) {
+  global $user;
+  if(!$node->status &&$node->type ='purchase_request' && $user->uid == $node->uid){
+    $node->content['undraft'] =  array(
+      '#markup' => t('Undraft'),
+      '#prefix' => '<a class= "button" href="node/'.$node->nid.'/undraft">',
+      '#suffix' => '</a>', 
+      '#weight' => -19,
+    );
+    $node->content['edit'] =  array(
+      '#markup' => t('Edit'),
+      '#prefix' => '<a class= "button" href="node/'.$node->nid.'/edit">',
+      '#suffix' => '</a>', 
+      '#weight' => -19,
+    );
+  }
 }
 /**
  * Implements hook_permission().
@@ -206,17 +226,18 @@ function camplus_pr_field_widget_form_alter(&$element, &$form_state, $context) {
   //必须是当前年份的预算项目
   //普通角色只能选择本部门的
   //Groups audience == 普通角色所属部门
-  // if(isset($element['#field_name']) && $element['#field_name'] == 'field_budget_items') {
-  //   $element['#ajax'] = array(
-  //     'callback' => 'ajax_get_bi_mixable_amount_callback',
-  //     'wrapper' => 'bi_warning',
-  //     'method' => 'replace',
-  //     'effect' => 'fade',
-  //   );
+  if(isset($element['#field_name']) && $element['#field_name'] == 'field_budget_items') {
+    // $element['#ajax'] = array(
+    //   'callback' => 'ajax_get_bi_mixable_amount_callback',
+    //   'wrapper' => 'bi_warning',
+    //   'method' => 'replace',
+    //   'effect' => 'fade',
+    // );
     if (!isset($element['#process'])) {
       $element['#process'] = array();
     }
     array_unshift($element['#process'], 'form_process_field_budget_items');
+  }
 }
 function form_process_field_budget_items(&$element) {
 
@@ -443,7 +464,7 @@ function node_access4camplus_pr($op, $node, $account = NULL) {
     global $user; 
      // && !in_array('administrator', $user->roles) 
     if($node->status && $user->uid <> 1) {
-      dpm('一旦发布 not be a Draft，不可编辑',__LINE__);
+      // dpm('一旦发布 not be a Draft，不可编辑',__LINE__);
       return false;
     }
     return node_access($op, $node, $account);
@@ -495,7 +516,7 @@ function camplus_pr_flag_access($flag, $content_id, $action, $account) {
  * 获取预算基本信息
  */
 function get_bis_info($node) {
-
+  global $debug;
   if(is_numeric($node)) {
     $budget_nid = $node;
     $bi_node = node_load($budget_nid);
@@ -522,7 +543,7 @@ function get_bis_info($node) {
             // 排除canceled PRs
             $flags = flag_get_counts('node', $nid, $reset = FALSE);
             if(isset($flags['cancel']) && $flags['cancel']){
-               dpm('canceled pr:'.$nid,__LINE__);
+               if($debug) dpm('canceled pr:'.$nid,__LINE__);
                continue;
             }
            $widgets = rate_get_active_widgets('node', $pr_node->type);
@@ -602,6 +623,7 @@ function get_bi_mixable_amount($budget_nid) {
  * @see logic.png
  */
 function get_bis_info_all($budget_nid) {
+  global $debug;
   $node = node_load($budget_nid);
   $row = array();
   if(isset($node->field_pr_budget[LANGUAGE_NONE])) {
@@ -621,7 +643,7 @@ function get_bis_info_all($budget_nid) {
       // 排除canceled PRs
       $flags = flag_get_counts('node', $nid, $reset = FALSE);
       if(isset($flags['cancel']) && $flags['cancel']){
-         dpm('canceled pr:'.$nid,__LINE__);
+         if($debug) dpm('canceled pr:'.$nid,__LINE__);
          continue;
       }
 
