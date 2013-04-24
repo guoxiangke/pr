@@ -44,10 +44,13 @@ function rate_pr_node_view($node, $view_mode, $langcode) {
 //status: approve_level=rid, approve_rang=0~4,  approve_status=Approve/Reject
 //permit_flag:true false.
 //status:true/false  means the PR finaly status.
+//TODO: node/%/view not effective ,call many times.
 function _rate_pr_check_permissions($node, $widget, $user = NULL) {
   if($node->type != 'purchase_request') return FALSE;
   if(!$user) global $user;
   global $debug;
+  $debug = FALSE;
+  if($node->nid==38)  $debug = TRUE;
   $approve_status['flags'] = flag_get_counts('node', $node->nid, $reset = FALSE);
   //确定角色和第几级审批设定
   {
@@ -59,31 +62,33 @@ function _rate_pr_check_permissions($node, $widget, $user = NULL) {
     }
     // $field_chosen_price = $node->field_chosen_price[LANGUAGE_NONE][0]['value'];
     $field_payment_from_students = $node->field_payment_from_students[LANGUAGE_NONE][0]['value'];
-    $total = $field_chosen_price + $field_payment_from_students;
-
+    $total = $field_chosen_price + $field_payment_from_students;//3300
+    // if($debug && $node->nid==38) dpm($total,'total');
     $camplus_pr_range_settings = variable_get('camplus_pr_range_settings');
+    // if($debug && $node->nid==38) dpm($camplus_pr_range_settings,'$camplus_pr_range_settings');
     foreach ($camplus_pr_range_settings as $key => $value) {
       if($value['end']-$total >= 0) {
-        $approve_rang = $key;
+        $approve_rang = $key; //the $key+1 group settings.
         break;
       }
     }
     $approve_status['approve_rang'] = $approve_rang;
     $workflow_settings = variable_get('camplus_pr_workflow_settings');
+    // if($debug) dpm($approve_rang,'approve_rang');
     $workflow_settings = $workflow_settings[$approve_rang];
-    //
+    // if($debug) dpm($workflow_settings,'workflow_settings');
     $rate_results = rate_get_results('node', $node->nid, $widget->id);
 
     if($rate_results['options']['-1']) {   //attention -1,can not change.
     //即有人选择reject，审核不通过
       $approve_status['workflow_status'] = 'reject';
-      if($debug) dpm('审核不通过,即有人选择');
-    }elseif($rate_results['options']['1'] == count(array_filter($workflow_settings))){//all choosed approve,审核通过
+      if($debug && $node->nid==38) dpm('审核不通过,即有人选择');
+    }elseif($rate_results['options']['1'] == count(array_filter($workflow_settings))) {//all choosed approve,审核通过
       $approve_status['workflow_status'] = 'approved';
-       if($debug) dpm('审核通过');
-    }else{//审核中
+       if($debug && $node->nid==38) dpm('审核通过');
+    }else {//审核中
        $approve_status['workflow_status'] = 'pending';
-       if($debug) dpm('审核中');
+       if($debug && $node->nid==38) dpm('审核中');
     }
     //确定角色
     $camplus_pr_approvable_role_involved = array_keys(variable_get('camplus_pr_approvable_role_involved'));

@@ -325,7 +325,7 @@ function camplus_pr_admin_paths_alter(&$paths) {
  * Implements hook_init().
  */
 function camplus_pr_init() {
-  $GLOBALS['debug'] = FALSE;
+  $GLOBALS['debug'] = true;
   $public_groups = druedu_user_get_nodes_by_group('school_department');
   $variables = array();
   foreach ($public_groups as $g_nid => $g_node) {
@@ -703,7 +703,7 @@ function get_bis_info_all($budget_nid) {
 function camplus_pr_views_pre_render(&$view) {
   global $user;
   $camplus_pr_approvable_role_involved = variable_get('camplus_pr_approvable_role_involved','');
-
+  if(!($view->name == 'purchase_request_list' && $view->current_display == 'all_pr_wait')) return;
   $unset = FALSE;
   foreach ($camplus_pr_approvable_role_involved as $key => $value) {
     //是否有审核权限
@@ -713,7 +713,7 @@ function camplus_pr_views_pre_render(&$view) {
   }
   //如果我不在审核队列，全部unset
   if(!$unset){
-   $view->result = array();
+   // $view->result = array();
   }
 
   foreach ($view->result as $key => $value) {
@@ -730,11 +730,14 @@ function camplus_pr_views_pre_render(&$view) {
         //等待penging
         if($approve_status['workflow_status'] != 'pending') unset($view->result[$key]);
         //等待我 TODO
+        //todo: 
+        // unset rate widget 如果我的上一级部门没有审核的话，在views里不显示。可以用veiws template实现，
+        //如果$approve_status['permit_flag'] = FALSE; 则不显示
         break;
       }
     }
   }
-  // dpm($view);
+  dpm($view);
 
   //   dpm($user->roles);
   //   dpm($camplus_pr_approvable_role_involved);
