@@ -698,3 +698,44 @@ function get_bis_info_all($budget_nid) {
   $row['g'] = get_bi_mixable_amount($budget_nid);//'通用余额';
   return $row;
 }
+
+
+function camplus_pr_views_pre_render(&$view) {
+  global $user;
+  $camplus_pr_approvable_role_involved = variable_get('camplus_pr_approvable_role_involved','');
+
+  $unset = FALSE;
+  foreach ($camplus_pr_approvable_role_involved as $key => $value) {
+    //是否有审核权限
+    if($value && in_array($key, $user->roles)) {
+      $unset = TRUE;
+    }
+  }
+  //如果我不在审核队列，全部unset
+  if(!$unset){
+   $view->result = array();
+  }
+
+  foreach ($view->result as $key => $value) {
+  //所有等待我处理的PRs
+    $node = node_load($value->nid);   //pr node
+    // if($node->status == 0) {echo  'Draft'; return;}
+    $widgets = rate_get_active_widgets('node', $node->type);
+    foreach ($widgets as $widget_id => $widget) {
+      //没有权限时，清楚rate
+      $widget->id = $widget_id;
+      if($widget->name == 'approve') {
+        $approve_status = _rate_pr_check_permissions($node,$widget);
+        // dpm ($approve_status['workflow_status']);
+        //等待penging
+        if($approve_status['workflow_status'] != 'pending') unset($view->result[$key]);
+        //等待我 TODO
+        break;
+      }
+    }
+  }
+  // dpm($view);
+
+  //   dpm($user->roles);
+  //   dpm($camplus_pr_approvable_role_involved);
+}
