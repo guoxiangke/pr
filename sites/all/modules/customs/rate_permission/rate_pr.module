@@ -49,8 +49,6 @@ function _rate_pr_check_permissions($node, $widget, $user = NULL) {
   if($node->type != 'purchase_request') return FALSE;
   if(!$user) global $user;
   global $debug;
-  $debug = FALSE;
-  if($node->nid==38)  $debug = TRUE;
   $approve_status['flags'] = flag_get_counts('node', $node->nid, $reset = FALSE);
   //确定角色和第几级审批设定
   {
@@ -233,4 +231,19 @@ function _camplus_pr_get_approve_rate($node) {
     }
   }
   return FALSE;
+}
+
+function camplus_par_get_vote($node, $account=NULL) {
+  global $user;
+  if(!$account) $account = $user;
+    //strtotime($field_financial_year);
+  $query = db_select('votingapi_vote', 'v')
+    ->fields('v', array('vote_id'))//nid
+    ->condition('v.entity_id',$node->nid)
+    ->condition('v.uid',$user->uid)
+    ->execute();
+  $result = $query->fetchCol();
+  $return = FALSE;
+  if(isset($result[0])) $return = TRUE;
+  return $return;
 }
