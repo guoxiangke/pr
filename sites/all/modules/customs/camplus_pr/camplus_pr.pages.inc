@@ -431,7 +431,7 @@ function camplus_pr_budget_settings_form() {
  *
  * @ingroup themeable
  */
-function theme_camplus_pr_budget_settings_form0($variables) {
+function theme_camplus_pr_budget_settings_form($variables) {
   global $debug;
   $form = $variables['form'];
   $header = array(
