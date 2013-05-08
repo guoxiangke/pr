@@ -98,6 +98,15 @@ function camplus_pr_menu() {
 
 function camplus_pr_undraft($node) {
   $node->status = 1;
+  // 1|Draft
+  // 2|Locked
+  // 3|Pending
+  // 4|Approved
+  // 5|Rejected
+  // 6|Completed
+  // 7|Cancelled
+  //pr status.when undraft ,check pending or locked???
+  $node->field_pr_status[LANGUAGE_NONE][0]['value'] = 3;
   node_save($node);
   drupal_goto('node/'.$node->nid);
 }
@@ -108,10 +117,10 @@ function camplus_pr_node_view($node, $view_mode, $langcode) {
   global $user;
   if(!$node->status &&$node->type ='purchase_request' && $user->uid == $node->uid){
     $node->content['undraft'] =  array(
-      '#markup' => t('Undraft'),
+      '#markup' => t('Submit'),
       '#prefix' => '<a class= "button" href="node/'.$node->nid.'/undraft">',
       '#suffix' => '</a>', 
-      '#weight' => -19,
+      '#weight' => -18,
     );
     $node->content['edit'] =  array(
       '#markup' => t('Edit'),
@@ -183,7 +192,16 @@ function camplus_pr_form_alter(&$form, &$form_state, $form_id) {
   if($form_id =='purchase_request_node_form'){
     drupal_add_js(drupal_get_path('module', 'camplus_pr').'/camplus_pr.js');
     $form['bi_warning'] = array(
-      '#markup' => '1.您不能跨部门预算<br/>2.最大余额为负时,默认隐藏该预算项目 <br/>3.不能超过通用余额',
+      '#markup' => 'Note:
+<br/>1. The Amount Request should be lower than the Applicable Balance remained in the input form
+
+<br/>2. After "Save" this Purchase Request Form, you need to "Submit" it for Approval Process
+
+<br/>3. You can Edit or Delete after "Save" and before "Submit"
+
+<br/>4. After "Submit", you CANNOT edit or delete, but you can "Cancel"
+
+<br/>5. Cancelled applications will remain as records and cannot be edited or deleted',
       '#weight' => -100,
       '#prefix' => '<div id="bi_warning" class="messages warning">',
       '#suffix' => '</div>',
@@ -345,7 +363,7 @@ function camplus_pr_admin_paths_alter(&$paths) {
  * Implements hook_init().
  */
 function camplus_pr_init() {
-  $GLOBALS['debug'] = FALSE;
+  $GLOBALS['debug'] = TRUE;
   $public_groups = druedu_user_get_nodes_by_group('school_department');
   $variables = array();
   foreach ($public_groups as $g_nid => $g_node) {
@@ -502,7 +520,7 @@ function camplus_pr_flag_access($flag, $content_id, $action, $account) {
   if($flag->name == 'cancel' || $flag->name == 'paid') {
     $node = node_load($content_id);
     // if($node->uid != $account->uid) return;
-    if(!$node) return;
+    if(!$node || !$node->status) return;
     $widget = _camplus_pr_get_approve_rate($node);
     if(!isset($widget->id)) return;
     $approve_status = _rate_pr_check_permissions($node,$widget);

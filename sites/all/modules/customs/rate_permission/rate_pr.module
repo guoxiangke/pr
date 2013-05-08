@@ -80,13 +80,13 @@ function _rate_pr_check_permissions($node, $widget, $user = NULL) {
     if($rate_results['options']['-1']) {   //attention -1,can not change.
     //即有人选择reject，审核不通过
       $approve_status['workflow_status'] = 'reject';
-      if($debug && $node->nid==38) dpm('审核不通过,即有人选择');
+      if($debug && $node->nid==42) dpm('审核不通过,即有人选择');
     }elseif($rate_results['options']['1'] == count(array_filter($workflow_settings))) {//all choosed approve,审核通过
       $approve_status['workflow_status'] = 'approved';
-       if($debug && $node->nid==38) dpm('审核通过');
+       if($debug && $node->nid==42) dpm('审核通过');
     }else {//审核中
        $approve_status['workflow_status'] = 'pending';
-       if($debug && $node->nid==38) dpm('审核中');
+       if($debug && $node->nid==42) dpm('审核中42');
     }
     //确定角色
     $camplus_pr_approvable_role_involved = array_keys(variable_get('camplus_pr_approvable_role_involved'));
@@ -246,4 +246,80 @@ function camplus_par_get_vote($node, $account=NULL) {
   $return = FALSE;
   if(isset($result[0])) $return = TRUE;
   return $return;
+}
+/**
+ * Implements hook_votingapi_insert().
+ */
+function rate_pr_votingapi_insert($votes) {
+//   $votes = Array
+// (
+//     [0] => Array
+//         (
+//             [entity_type] => node
+//             [entity_id] => 40
+//             [value_type] => option
+//             [value] => 1
+//             [tag] => vote
+//             [uid] => 20
+//             [timestamp] => 1368020396
+//             [vote_source] => 127.0.0.1
+//             [prepped] => 1
+//             [vote_id] => 47
+//         )
+
+// )
+
+  // 1|Draft
+  // 2|Locked
+  // 3|Pending
+  // 4|Approved
+  // 5|Rejected
+  // 6|Completed
+  // 7|Cancelled
+
+  $node = node_load($votes[0]['entity_id']);
+  if($votes[0]['value'] == 1) {//You voted 'Approve'.
+    //check pending or ???
+    $widget = _camplus_pr_get_approve_rate($node);
+    if(!isset($widget->id)) return;
+    $approve_status = _rate_pr_check_permissions($node,$widget);
+    global $debug;
+    if($debug) watchdog('ooooo', ''.print_r($approve_status,TRUE), $variables = array(), $severity = WATCHDOG_NOTICE, $link = NULL);
+    //oh no ,didn't work. should do this after done.
+    //http://drupal.org/project/voting_rules
+    if($approve_status['workflow_status'] == 'approved') { //all approved.
+      $node->field_pr_status[LANGUAGE_NONE][0]['value'] = 4;
+      node_save($node);
+    }
+  }else {//You voted 'reject'.
+    $node->field_pr_status[LANGUAGE_NONE][0]['value'] = 5;
+    node_save($node);
+  }
+}
+
+/**
+ * Preprocess function for the yesno template.
+ * @see rate_preprocess_rate_template_yesno
+ */
+function rate_pr_preprocess_rate_template_yesno(&$variables) {
+  extract($variables);
+
+  $buttons = array();
+  foreach ($links as $link) {
+    $button = theme('rate_button', array('text' => $link['text'], 'href' => $link['href'], 'class' => 'rate-yesno-btn'));
+    $button .= $link['votes'];
+    $buttons[] = $button;
+  }
+  $variables['buttons'] = $buttons;
+
+  $info = array();
+  if ($mode == RATE_CLOSED) {
+    $info[] = t('Voting is closed.');
+  }
+  if ($mode != RATE_COMPACT && $mode != RATE_COMPACT_DISABLED) {
+    if (isset($results['user_vote'])) {
+      $info[] = t('@option by me', array('@option' => t($results['user_vote'])));
+    }
+  }
+  $variables['info'] = implode(' ', $info);
 }
