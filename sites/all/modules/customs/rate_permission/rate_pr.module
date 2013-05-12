@@ -280,17 +280,18 @@ function rate_pr_votingapi_insert($votes) {
   $node = node_load($votes[0]['entity_id']);
   if($votes[0]['value'] == 1) {//You voted 'Approve'.
     //check pending or ???
-    $widget = _camplus_pr_get_approve_rate($node);
-    if(!isset($widget->id)) return;
-    $approve_status = _rate_pr_check_permissions($node,$widget);
-    global $debug;
-    if($debug) watchdog('ooooo', ''.print_r($approve_status,TRUE), $variables = array(), $severity = WATCHDOG_NOTICE, $link = NULL);
-    //oh no ,didn't work. should do this after done.
-    //http://drupal.org/project/voting_rules
-    if($approve_status['workflow_status'] == 'approved') { //all approved.
-      $node->field_pr_status[LANGUAGE_NONE][0]['value'] = 4;
-      node_save($node);
-    }
+    //@see rate_pr.rules.inc
+    // $widget = _camplus_pr_get_approve_rate($node);
+    // if(!isset($widget->id)) return;
+    // $approve_status = _rate_pr_check_permissions($node,$widget);
+    // global $debug;
+    // if($debug) watchdog('ooooo', ''.print_r($approve_status,TRUE), $variables = array(), $severity = WATCHDOG_NOTICE, $link = NULL);
+    // //oh no ,didn't work. should do this after done.
+    // //http://drupal.org/project/voting_rules
+    // if($approve_status['workflow_status'] == 'approved') { //all approved.
+    //   $node->field_pr_status[LANGUAGE_NONE][0]['value'] = 4;
+    //   node_save($node);
+    // }
   }else {//You voted 'reject'.
     $node->field_pr_status[LANGUAGE_NONE][0]['value'] = 5;
     node_save($node);
@@ -323,3 +324,71 @@ function rate_pr_preprocess_rate_template_yesno(&$variables) {
   }
   $variables['info'] = implode(' ', $info);
 }
+
+/**
+ * Implements hook_init().
+ */
+// function rate_pr_init() {
+//   drupal_add_js(drupal_get_path('module', 'rate_pr') . '/rate_pr.js');
+// }
+/**
+ * Implements hook_menu().
+ */
+// function rate_pr_menu() {
+//   /*
+//    *$items['blog'] = array(
+//    *  'title' => 'blogs',
+//    *  'page callback' => 'blog_page',
+//    *  'access arguments' => array('access content'),
+//    *  'type' => MENU_SUGGESTED_ITEM,
+//    *);
+//    */
+//   $items['nojs/%node/retecheck/%'] = array(
+//     'title' => 'ratestatuscheck',
+//     'type' => MENU_CALLBACK,
+//     'page callback' => '_druedu_notifications_page_unsubscribe_subscription_4ajax',
+//     'page arguments' => array(1,3),
+//     'access callback' => 1,
+//     'file' => 'druedu_notifications.pages.inc',
+//   ); 
+//   $items['ajax/%node/retecheck/%'] = array(
+//     'delivery callback' => 'ajax_deliver',
+//   ) + $items['nojs/%node/retecheck/%'];
+//   return $items;
+// }
+
+/**
+ * Implements hook_node_load().
+ * vote after solutions.
+ */
+  // 1|Draft
+  // 2|Locked
+  // 3|Pending
+  // 4|Approved
+  // 5|Rejected
+  // 6|Completed
+  // 7|Cancelled
+function rate_pr_node_load($nodes, $types) {
+   foreach ($nodes as $node) {
+    if($node->type == 'purchase_request') {
+
+      if(isset($node->field_pr_status[LANGUAGE_NONE][0]['value']) && $node->field_pr_status[LANGUAGE_NONE][0]['value'] == 3) {
+        //check if all approved. if so ,change status to 4.
+        $widget = _camplus_pr_get_approve_rate($node);
+        if(!isset($widget->id)) return;
+        $approve_status = _rate_pr_check_permissions($node,$widget);
+        //oh no ,didn't work. should do this after done.
+        //http://drupal.org/project/voting_rules
+        if($approve_status['workflow_status'] == 'approved') { //all approved.
+          // $node->field_pr_status[LANGUAGE_NONE][0]['value'] = 4;
+          // node_save($node); // or do_action
+          camplus_pr_status_update($node->vid,4);
+          // cache_clear_all($cid = NULL, $bin = NULL, $wildcard = FALSE);
+          drupal_flush_all_caches();
+        }
+      }
+    }
+
+   }
+}
+

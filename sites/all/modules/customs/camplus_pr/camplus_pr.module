@@ -110,6 +110,24 @@ function camplus_pr_undraft($node) {
   node_save($node);
   drupal_goto('node/'.$node->nid);
 }
+function camplus_pr_status_update($vid, $status_id) {
+  $status_update = db_update('field_data_field_pr_status')
+  ->fields(array(
+    'field_pr_status_value' => $status_id,
+  ))
+  // ->condition('entity_id', $nid)
+  ->condition('revision_id', $vid)
+  ->execute();
+
+  $status_update1 = db_update('field_revision_field_pr_status')
+  ->fields(array(
+    'field_pr_status_value' => $status_id,
+  ))
+  // ->condition('entity_id', $nid)
+  ->condition('revision_id', $vid)
+  ->execute();
+  return $status_update&&$status_update1;
+}
 /**
  * Implements hook_node_view().
  */
@@ -242,7 +260,7 @@ function purchase_request_node_form_validate($form, &$form_state) {
         form_set_error('[field_budget_items_amount][und][value]', t('最大余额为负时,不能预算！'));
       }
       if($field_budget_items_amounts[$key] > $bis_info_all['g']) {//通用余额  get_bi_mixable_amount($field_budget_items[$key]
-        form_set_error('[field_budget_items_amount][und][value]', t('不能超过通用余额'));
+        form_set_error('[field_budget_items_amount][und][value]', t('不能超过通用余额'.$bis_info_all['g'].'如果数值小于提示数值，此时原因可能是别人通用你的l'));
       }
 
     }
@@ -369,7 +387,8 @@ function camplus_pr_init() {
   foreach ($public_groups as $g_nid => $g_node) {
     $all_subjects_node = camplus_pr_get_bis_by_year($g_nid,$financial_year = NULL);
     foreach ($all_subjects_node as $s_nid => $s_node) {
-      $variables[$s_nid] = get_bi_mixable_amount($s_nid); 
+      $bis_info_all = get_bis_info_all($s_nid);
+      $variables[$s_nid] = $bis_info_all['d']; 
     }
   }
   $variables['_none'] = 0; 
