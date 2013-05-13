@@ -86,6 +86,16 @@ function camplus_pr_menu() {
     'page arguments' => array('camplus_pr_budget_settings_form'), 
     'file' => 'camplus_pr.pages.inc',
   );
+  $items['pr/my_budget_report'] = array(
+    'title' => 'My Budget Report',
+    'access arguments' => array('view budget report'),
+    'weight' => 5,
+    'type' => MENU_LOCAL_TASK, 
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('camplus_pr_budget_settings_form'), 
+    'access arguments' => array('create purchase_request content'), 
+    'file' => 'camplus_pr.pages.inc',
+  );
   $items['node/%node/undraft'] =  array(
     'title' => 'undraft pr',
     'page callback' => 'camplus_pr_undraft',

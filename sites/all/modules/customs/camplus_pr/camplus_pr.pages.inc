@@ -348,8 +348,14 @@ function camplus_pr_budget_settings_form() {
     $financial_year = NULL;
   }
   $public_groups = druedu_user_get_nodes_by_group('school_department');
-
+dpm(arg(1));
   foreach ($public_groups as $g_nid => $g_node) {
+
+    if(arg(1) == 'my_budget_report') {
+      if(!og_is_member($group_type = 'node', $g_nid, $entity_type = 'user', $entity = NULL, $states = array(OG_STATE_ACTIVE)))
+        continue;
+    }
+
     $groups[$g_nid]['gid'] = $g_nid;
     $groups[$g_nid]['depth'] = 0;
     $groups[$g_nid]['parent'] = 0;
@@ -450,7 +456,7 @@ function theme_camplus_pr_budget_settings_form($variables) {
     );
 
   foreach (element_children($form['groups']) as $key=>$gid) {
-
+  
     $group = &$form['groups'][$gid];
     $name = $group['#group']['name'];
     $row = array();
