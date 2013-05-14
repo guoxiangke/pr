@@ -13,17 +13,18 @@
 			  	}
 			});
 
-				$('.multiple-field-budget-items-amount input').blur(function(){
-					total = 0;
-					$('.multiple-field-budget-items-amount input').each(function(){
-						total += parseFloat($(this).val());
-					});
-					$('.field-name-field-chosen-price input').attr('value',total);
+			$(".field-name-field-chosen-price input").attr("disabled","disabled");
+			$('.multiple-field-budget-items-amount input').blur(function(){
+				total = 0;
+				$('.multiple-field-budget-items-amount input').each(function(){
+					total += parseFloat($(this).val());
 				});
+				$('.field-name-field-chosen-price input').attr('value',total);
+			});
 				
 		}
 	}
-
+	
 	$(".field-name-field-chosen-price input").attr("disabled","disabled");
 	$('.multiple-field-budget-items-amount input').blur(function(){
 		total = 0;
