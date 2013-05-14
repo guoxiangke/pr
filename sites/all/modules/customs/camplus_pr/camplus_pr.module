@@ -23,13 +23,24 @@ function camplus_pr_menu() {
     'file' => 'camplus_pr.pages.inc',
   );
   $items['admin/config/camplus/pr_settings/rang_count'] = array(
-    'title' => t('PR settings rang count'),
+    'title' => t('Basic Setting'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('camplus_pr_settings_form'),
     'access arguments' => array('camplus bi settings'),
     'file' => 'camplus_pr.pages.inc',
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'weight' =>-28,
+  );
+
+  //PR range settings
+  $items['admin/config/camplus/pr_settings/range_settings'] = array(
+    'title' => t('PR range settings'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('camplus_pr_range_settings_form'),
+    'access arguments' => array('camplus bi settings'),
+    'file' => 'camplus_pr.pages.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' =>-27,
   );
 	$items['admin/config/camplus/pr_settings/roles_involved'] = array(
 		'title' => t('PR roles involved'),
@@ -38,7 +49,7 @@ function camplus_pr_menu() {
     'access arguments' => array('camplus bi settings'),
 		'file' => 'camplus_pr.pages.inc',
     'type' => MENU_LOCAL_TASK,
-    'weight' =>-30,
+    'weight' =>-26,
 	);
   $items['admin/config/camplus/pr_settings/roles_weight'] = array(
     'title' => t('PR roles weight'),
@@ -47,18 +58,8 @@ function camplus_pr_menu() {
     'access arguments' => array('camplus bi settings'),
     'file' => 'camplus_pr.pages.inc',
     'type' => MENU_LOCAL_TASK,
-    'weight' =>-29,
+    'weight' =>-25,
   );
-	//PR range settings
-	$items['admin/config/camplus/pr_settings/range_settings'] = array(
-		'title' => t('PR range settings'),
-		'page callback' => 'drupal_get_form',
-    'page arguments' => array('camplus_pr_range_settings_form'),
-    'access arguments' => array('camplus bi settings'),
-		'file' => 'camplus_pr.pages.inc',
-    'type' => MENU_LOCAL_TASK,
-    'weight' =>-27,
-	);
   $items['admin/config/camplus/pr_settings/pr_approve_settings'] = array(
     'title' => t('PR approve workflow settings'),
     'page callback' => 'drupal_get_form',
@@ -66,7 +67,7 @@ function camplus_pr_menu() {
     'access arguments' => array('camplus bi settings'),
     'file' => 'camplus_pr.pages.inc',
     'type' => MENU_LOCAL_TASK,
-    'weight' =>-26,
+    'weight' =>-24,
   );
   // $items['admin/config/camplus/advanced_management/budget/settings'] = array(
   //   'title' => 'Budget settings',
@@ -157,6 +158,16 @@ function camplus_pr_node_view($node, $view_mode, $langcode) {
       '#weight' => -19,
     );
   }
+
+  if($node->type == 'budget_item' ) {
+    //if not open mixable key, == not Enable Budget Pool, hide the field
+    //@see node_view & purchase_request_node_form_validate()
+    //只是隐藏而已，实际的动作是不可以通用，即submit 提交验证。
+    if(!variable_get('camplus_pr_enable_mixable_key', 0)) {
+      unset($node->content['field_mixable_key']);
+    }  
+  }
+
 }
 /**
  * Implements hook_permission().
@@ -185,7 +196,9 @@ function camplus_pr_permission() {
     'view budget report' => array(
       'title' => t('View Budget Report'),
     ),
-
+    // 'pr office submission' => array(//Enable Office Submission means Office Staff Mady help teachers to create, fill and submit the Purchase Request, but the Applicant will still be the teacher who request the purchase.
+    //   'title' => t('Office Submission'),
+    // ),
    );
 }
 /**
@@ -236,7 +249,14 @@ function camplus_pr_form_alter(&$form, &$form_state, $form_id) {
     );
     $form['#validate'][] = 'purchase_request_node_form_validate';
   }
-
+  //if not open mixable key, == not Enable Budget Pool, hide the field
+  //@see node_view & purchase_request_node_form_validate()
+  //只是隐藏而已，实际的动作是不可以通用，即submit 提交验证。
+  if($form_id == 'budget_item_node_form') {
+    if(!variable_get('camplus_pr_enable_mixable_key', 0)) {
+      unset($form['field_mixable_key']);
+    }
+  }
 }
 function purchase_request_node_form_validate($form, &$form_state) {
   // Budget Items field && Budget Items amount field validate
@@ -266,8 +286,13 @@ function purchase_request_node_form_validate($form, &$form_state) {
 
       $field_budget_items_amounts[$key] = $value['field_budget_items_amount']['und']['value'];
       $bis_info_all = get_bis_info_all($field_budget_items[$key]);
-      if($bis_info_all['f']<=0) {//最大余额 
+  // form_set_error('[field_budget_items_amount][und][value]', t($field_budget_items_amounts[$key].'最大余额为负时'.$bis_info_all['f'].',不能预算！'));
+      if($bis_info_all['e'] <= 0) {//最大余额 
         form_set_error('[field_budget_items_amount][und][value]', t('最大余额为负时,不能预算！'));
+      }
+      //超过最大余额，将要通用别人的
+      if(($field_budget_items_amounts[$key] > $bis_info_all['e']) && !variable_get('camplus_pr_enable_mixable_key', 0) ) {//通用余额  get_bi_mixable_amount($field_budget_items[$key]
+        form_set_error('[field_budget_items_amount][und][value]', t('您只能使用最大余额'.$bis_info_all['f'].' 不能通用not Enable Budget Pool'));
       }
       if($field_budget_items_amounts[$key] > $bis_info_all['g']) {//通用余额  get_bi_mixable_amount($field_budget_items[$key]
         form_set_error('[field_budget_items_amount][und][value]', t('不能超过通用余额'.$bis_info_all['g'].'如果数值小于提示数值，此时原因可能是别人通用你的l'));

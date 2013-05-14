@@ -20,7 +20,7 @@ function camplus_pr_roles_involved_settings_form($form, &$form_state) {
       );
     $count++;
 	}
-  $form['warning_info'] = array('#markup' => t('注意:一经设置，不可取消,可添加不可删减,请管理员慎重操作!'),
+  $form['warning_info'] = array('#markup' => t('Note: The following settings are critical, please make sure you know what your are doing! 注意:一经设置，不可取消,可添加不可删减,请管理员慎重操作!'),
     '#weight'=>-10,'#prefix' => '<div class="messages warning">',
     '#suffix' => '</div>');
 
@@ -190,36 +190,85 @@ function theme_camplus_pr_range_settings_form($variables) {
   $output .= drupal_render_children($form);
 
 
-  $warning = '<div class="messages warning">一经设置，请审慎更改! </div>';
+  $warning = '<div class="messages warning">Note: The following settings are critical, please make sure you know what your are doing!</div>';
   return $warning.$output;
 }
 
 function camplus_pr_settings_form() {
   $form['camplus_pr_settings_range'] = array(
     '#type' => 'textfield',
-    '#title' => t('Range Number'),
+    '#title' => t('No. of Price Range'),
     '#default_value' => variable_get('camplus_pr_settings_range', '5'),
-    '#description' => 'how many group of settings',
+    '#description' => 'How many price rangs in Approval process',
     '#required' => TRUE,
   );
   $form['camplus_pr_financial_year_begin'] = array(
     '#type' => 'textfield',
-    '#title' => t('FINANCIAL YEAR Begin'),
+    '#title' => t('Financial Year Begin'),
     '#default_value' => variable_get('camplus_pr_financial_year_begin', '09-01'),
     '#required' => TRUE,
   );  
-  $form['camplus_pr_financial_year_end'] = array(
-    '#type' => 'textfield',
-    '#title' => t('FINANCIAL YEAR ENd'),
-    '#default_value' => variable_get('camplus_pr_financial_year_end', '08-31'),
-    '#required' => TRUE,
-  );    
+  // $form['camplus_pr_financial_year_end'] = array(
+  //   '#type' => 'textfield',
+  //   '#title' => t('Financial Year End'),
+  //   '#default_value' => variable_get('camplus_pr_financial_year_end', '08-31'),
+  //   '#required' => TRUE,
+  // );    
   $form['camplus_pr_enable_mixable_key'] = array(
     '#type' => 'checkbox',
-    '#title' => t('Enable mixable key'),
+    '#title' => t('Enable Budget Pool'),
     '#default_value' => variable_get('camplus_pr_enable_mixable_key', 1),
-    '#description' => '是否允许通用,默认允许',
+    '#description' => 'Enable Budget Pool allows "borrowing" money across other Budget Item(s) with the same Budget Pool Key',//是否允许通用,默认允许
   );  
+  $form['camplus_pr_email_notification_enable'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable Email notification'),
+    '#default_value' => variable_get('camplus_pr_email_notification_enable', '0'),
+    '#description' => '',
+  ); 
+  $form['camplus_pr_email_notification_addr'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Enable Email notification to'),
+    '#default_value' => variable_get('site_mail', 'admin@admin.com'),
+    '#description' => '',
+    '#required' => TRUE,
+  );
+  $form['camplus_pr_lock_function_enable'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable "Lock" function for the Purchase Request Submission'),
+    '#default_value' => variable_get('camplus_pr_lock_function_enable', '0'),
+    '#description' => '',
+  ); 
+  $roles = user_roles(TRUE, 'camplus purchase request approvable');
+  $form['camplus_pr_unlock_role'] = array(
+    '#type' => 'select',
+    '#title' => t('Choose which Role can unlock:'),
+    '#default_value' => variable_get('camplus_pr_unlock_role', '6'),
+    '#options' => $roles,
+    '#description' => '',
+    '#required' => TRUE,
+  ); 
+  $form['camplus_pr_help_staff_enable'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable Office Submission'),
+    '#default_value' => variable_get('camplus_pr_help_staff_enable', '0'),
+    '#description' => 'Enable Office Submission means Office Staff Mady help teachers to create, fill and submit the Purchase Request, but the Applicant will still be the teacher who request the purchase.',// Your can give role permissions of "Office Submission"
+  );
+  $form['camplus_pr_help_role'] = array(
+    '#type' => 'select',
+    '#title' => t('Choose which Role can unlock:'),
+    '#default_value' => variable_get('camplus_pr_unlock_role', '6'),
+    '#options' => user_roles(TRUE,'create purchase_request content'),
+    '#description' => '',
+    '#required' => TRUE,
+  ); 
+  $form['camplus_pr_no_pattern_prefix'] = array(
+    '#type' => 'textfield',
+    '#title' => t('PR Reference Number Pattern Prefix'),
+    '#default_value' => variable_get('camplus_pr_no_pattern_prefix', 'PR'),
+    '#description' => 'The resulet will be "prefix-[financial_year]-[nid]"',
+    '#required' => TRUE,
+  );   
   $form['camplus_pr_show_budget_history'] = array(
     '#type' => 'textfield',
     '#title' => t('Show Budget History'),
@@ -227,7 +276,7 @@ function camplus_pr_settings_form() {
     '#description' => '显示最近几年的预算报表？',
     '#required' => TRUE,
   );   
-  $form['warning_info'] = array('#markup' => t('注意:一经设置，请管理员慎重更改!'),
+  $form['warning_info'] = array('#markup' => t('Note: The following settings are critical, please make sure you know what your are doing!'),
   '#weight'=>-10,'#prefix' => '<div class="messages warning">',
   '#suffix' => '</div>');
   return system_settings_form($form);
@@ -333,7 +382,7 @@ function theme_camplus_pr_approve_settings_form($variables) {
   }
   $output = theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('id' => 'approvable_role')));
   $output .= drupal_render_children($form);
-  $warning = '<div class="messages warning">一经设置，请审慎更改! </div>';
+  $warning = '<div class="messages warning">Note: The following settings are critical, please make sure you know what your are doing!</div>';
   return $warning.$output;
 }
 
