@@ -229,7 +229,7 @@ function camplus_pr_settings_form() {
   $form['camplus_pr_email_notification_addr'] = array(
     '#type' => 'textfield',
     '#title' => t('Enable Email notification to'),
-    '#default_value' => variable_get('site_mail', 'admin@admin.com'),
+    '#default_value' => variable_get('camplus_pr_email_notification_addr', 'admin@admin.com'),
     '#description' => '',
     '#required' => TRUE,
   );
@@ -239,15 +239,15 @@ function camplus_pr_settings_form() {
     '#default_value' => variable_get('camplus_pr_lock_function_enable', '0'),
     '#description' => '',
   ); 
-  $roles = user_roles(TRUE, 'camplus purchase request approvable');
-  $form['camplus_pr_unlock_role'] = array(
-    '#type' => 'select',
-    '#title' => t('Choose which Role can unlock:'),
-    '#default_value' => variable_get('camplus_pr_unlock_role', '6'),
-    '#options' => $roles,
-    '#description' => '',
-    '#required' => TRUE,
-  ); 
+  // $roles = user_roles(TRUE, 'camplus purchase request approvable');
+  // $form['camplus_pr_unlock_role'] = array(
+  //   '#type' => 'select',
+  //   '#title' => t('Choose which Role can unlock:'),
+  //   '#default_value' => variable_get('camplus_pr_unlock_role', '6'),
+  //   '#options' => $roles,
+  //   '#description' => '',
+  //   '#required' => TRUE,
+  // ); 
   $form['camplus_pr_help_staff_enable'] = array(
     '#type' => 'checkbox',
     '#title' => t('Enable Office Submission'),
@@ -256,7 +256,7 @@ function camplus_pr_settings_form() {
   );
   $form['camplus_pr_help_role'] = array(
     '#type' => 'select',
-    '#title' => t('Choose which Role can unlock:'),
+    '#title' => t('Choose which Role to execute Submission for others:'),
     '#default_value' => variable_get('camplus_pr_unlock_role', '6'),
     '#options' => user_roles(TRUE,'create purchase_request content'),
     '#description' => '',
@@ -397,7 +397,6 @@ function camplus_pr_budget_settings_form() {
     $financial_year = NULL;
   }
   $public_groups = druedu_user_get_nodes_by_group('school_department');
-dpm(arg(1));
   foreach ($public_groups as $g_nid => $g_node) {
 
     if(arg(1) == 'my_budget_report') {

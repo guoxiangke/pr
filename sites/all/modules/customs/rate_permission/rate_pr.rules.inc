@@ -11,7 +11,23 @@ function rate_pr_rules_condition_info() {
     'rate_pr_condition_all_approved' => array(
       'label' => t('If all approved the pr.'),
       'arguments' => array(
-        'new_answer' => array('type' => 'node', 'label' => t('The vote node.')),
+        'new_answer' => array('type' => 'node', 'label' => t('The node.')),
+      ),
+      'module' => 'rate_pr',
+      'group' => t('Customs'),
+    ),
+  'rate_pr_condition_lock' => array(
+      'label' => t('If need lock'),
+      'arguments' => array(
+        'new_answer' => array('type' => 'node', 'label' => t('The node.')),
+      ),
+      'module' => 'rate_pr',
+      'group' => t('Customs'),
+    ),  
+  'rate_pr_condition_email' => array(
+      'label' => t('If need email'),
+      'arguments' => array(
+        'new_answer' => array('type' => 'node', 'label' => t('The node.')),
       ),
       'module' => 'rate_pr',
       'group' => t('Customs'),
@@ -33,4 +49,119 @@ function rate_pr_condition_all_approved($node) {
     return TRUE;
   }
   return FALSE;
+}
+
+/**
+ * Condition rate_pr_condition_all_approved
+ */
+function rate_pr_condition_lock($node) {
+  //global setting of lock
+  if(!variable_get('camplus_pr_lock_function_enable', '0')) {
+    return FALSE;
+  }
+  $bis_info_all = get_bis_info_all($node->field_budget_items[LANGUAGE_NONE][0]['target_id']);
+  if($bis_info_all['f'] < 0) {
+    watchdog('locked pr1', 'message', array(), WATCHDOG_NOTICE, 'link');
+    return TRUE;
+  }
+  return FALSE;
+}
+function rate_pr_condition_email($node) {
+  //global setting of lock
+  // if(!variable_get('camplus_pr_lock_function_enable', '0')) {
+  //   return FALSE;
+  // }
+  if(!variable_get('camplus_pr_email_notification_enable', '0')) {
+    return FALSE;
+  }
+  $bis_info_all = get_bis_info_all($node->field_budget_items[LANGUAGE_NONE][0]['target_id']);
+  if($bis_info_all['f'] < 0) {
+    // watchdog('send eamil', 'message', array(), WATCHDOG_NOTICE, 'link');
+    return TRUE;
+  }
+  return FALSE;
+}
+ /**
+ * implementation of hook_rules_condition_info()
+ */
+function rate_pr_rules_action_info() {
+  return array(
+    'rate_pr_action_email' => array(
+      'label' => t('1.Email to specific addr when mixable/locked.'),
+      'arguments' => array(
+        'new_answer' => array('type' => 'node', 'label' => t('The new answer someone gives.')),
+      ),
+      'module' => 'rate_pr',
+      'group' => t('Customs'),
+    ),
+  );
+}
+/**
+ * Condition packages_condition_packagetype
+ */
+  // 1|Draft
+  // 2|Locked
+  // 3|Pending
+  // 4|Approved
+  // 5|Rejected
+  // 6|Completed
+  // 7|Cancelled
+function rate_pr_action_email($node) {
+   //Provide the the old answer as parameter to unflag?
+   //do something, no return.
+  // drupal_mail($module, $key, $to, $language, $params = array(), $from = NULL, $send = TRUE);
+ if($node->field_pr_status[LANGUAGE_NONE][0]['value'] == '2') {
+  watchdog('email not', 'message', array(), WATCHDOG_NOTICE, 'link');  return;
+ }
+ //begin
+  // All system mails need to specify the module and template key (mirrored from
+  // hook_mail()) that the message they want to send comes from.
+  $module = 'rate_pr';
+  $key = 'lock_email';
+
+  // Specify 'to' and 'from' addresses.
+  $to =  variable_get('camplus_pr_email_notification_addr', 'admin@admin.com');
+  $from = variable_get('site_mail', 'admin@example.com');
+
+  // "params" loads in additional context for email content completion in
+  // hook_mail(). In this case, we want to pass in the values the user entered
+  // into the form, which include the message body in $form_values['message'].
+  // $params = $form_values;//????
+  $params = array(
+    'subject' => $node->title,
+    'body' => "<p>Hello World</p>",
+  );
+  // The language of the e-mail. This will one of three values:
+  // * user_preferred_language(): Used for sending mail to a particular website
+  //   user, so that the mail appears in their preferred language.
+  // * global $language: Used when sending a mail back to the user currently
+  //   viewing the site. This will send it in the language they're currently
+  //   using.
+  // * language_default(): Used when sending mail to a pre-existing, 'neutral'
+  //   address, such as the system e-mail address, or when you're unsure of the
+  //   language preferences of the intended recipient.
+  //
+  // Since in our case, we are sending a message to a random e-mail address that
+  // is not necessarily tied to a user account, we will use the site's default
+  // language.
+  $language = language_default();
+
+  // Whether or not to automatically send the mail when drupal_mail() is
+  // called. This defaults to TRUE, and is normally what you want unless you
+  // need to do additional processing before drupal_mail_send() is called.
+  $send = TRUE;
+  // Send the mail, and check for success. Note that this does not guarantee
+  // message delivery; only that there were no PHP-related issues encountered
+  // while sending.
+  $result = drupal_mail($module, $key, $to, $language, $params, $from, $send);
+  if ($result['result'] == TRUE) {
+    drupal_set_message(t('Your eamil has been sent.'));
+  }
+  else {
+    drupal_set_message(t('There was a problem sending your eamil and it was not sent.'), 'error');
+  }
+
+ //end
+ watchdog('emailed', 'message', array(), WATCHDOG_NOTICE, 'link');
+  return;
 }

@@ -118,6 +118,12 @@ function camplus_pr_undraft($node) {
   // 7|Cancelled
   //pr status.when undraft ,check pending or locked???
   $node->field_pr_status[LANGUAGE_NONE][0]['value'] = 3;
+  $bis_info_all = get_bis_info_all($node->field_budget_items[LANGUAGE_NONE][0]['target_id']);
+  if($bis_info_all['f'] < 0) {
+    $node->field_pr_status[LANGUAGE_NONE][0]['value'] = 2;
+    //TODO auto flag
+    watchdog('f', 'Lockedr', array(), WATCHDOG_NOTICE, 'link');
+  }
   node_save($node);
   drupal_goto('node/'.$node->nid);
 }
