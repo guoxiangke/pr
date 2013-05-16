@@ -338,7 +338,6 @@ function camplus_pr_field_widget_form_alter(&$element, &$form_state, $context) {
   }
 }
 function form_process_field_budget_items(&$element) {
-
     if(strpos($element['#id'], 'field-budget-items-und')  !== FALSE ) {
         //如果角色不是管理角色，只显示所属部门的子预算项目
         if(!user_access('camplus budget cross sectoral')) { //

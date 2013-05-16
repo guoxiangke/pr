@@ -257,7 +257,7 @@ function camplus_pr_settings_form() {
   $form['camplus_pr_help_role'] = array(
     '#type' => 'select',
     '#title' => t('Choose which Role to execute Submission for others:'),
-    '#default_value' => variable_get('camplus_pr_unlock_role', '6'),
+    '#default_value' => variable_get('camplus_pr_help_role', '6'),
     '#options' => user_roles(TRUE,'create purchase_request content'),
     '#description' => '',
     '#required' => TRUE,
