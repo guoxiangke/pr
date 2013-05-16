@@ -76,7 +76,7 @@ function rate_pr_condition_email($node) {
   }
   $bis_info_all = get_bis_info_all($node->field_budget_items[LANGUAGE_NONE][0]['target_id']);
   if($bis_info_all['f'] < 0) {
-    // watchdog('send eamil', 'message', array(), WATCHDOG_NOTICE, 'link');
+    watchdog('send eamil condition_email enough', 'message', array(), WATCHDOG_NOTICE, 'link');
     return TRUE;
   }
   return FALSE;
@@ -111,7 +111,7 @@ function rate_pr_action_email($node) {
    //do something, no return.
   // drupal_mail($module, $key, $to, $language, $params = array(), $from = NULL, $send = TRUE);
  if($node->field_pr_status[LANGUAGE_NONE][0]['value'] == '2') {
-  watchdog('email not', 'message', array(), WATCHDOG_NOTICE, 'link');  return;
+    watchdog('value==2', 'message', array(), WATCHDOG_NOTICE, 'link');
  }
  //begin
   // All system mails need to specify the module and template key (mirrored from
@@ -155,13 +155,15 @@ function rate_pr_action_email($node) {
   // while sending.
   $result = drupal_mail($module, $key, $to, $language, $params, $from, $send);
   if ($result['result'] == TRUE) {
+    watchdog('rate_pr', 'Your eamil has been sent.', array(), WATCHDOG_NOTICE, 'link');
     drupal_set_message(t('Your eamil has been sent.'));
   }
   else {
+    watchdog('rate_pr', 'There was a problem sending your eamil and it was not sent.', array(), WATCHDOG_NOTICE, 'link');
     drupal_set_message(t('There was a problem sending your eamil and it was not sent.'), 'error');
   }
 
- //end
- watchdog('emailed', 'message', array(), WATCHDOG_NOTICE, 'link');
+  //end
+  watchdog('emailed', 'message', array(), WATCHDOG_NOTICE, 'link');
   return;
 }
