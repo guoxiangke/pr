@@ -463,7 +463,7 @@ function camplus_pr_admin_paths_alter(&$paths) {
  * Implements hook_init().
  */
 function camplus_pr_init() {
-  $GLOBALS['debug'] = TRUE;
+  $GLOBALS['debug'] = FALSE;
   $public_groups = druedu_user_get_nodes_by_group('school_department');
   $variables = array();
   foreach ($public_groups as $g_nid => $g_node) {
