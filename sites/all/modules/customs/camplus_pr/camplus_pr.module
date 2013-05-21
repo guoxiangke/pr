@@ -78,6 +78,26 @@ function camplus_pr_menu() {
   //   'weight' => 7,
   //   'type' => MENU_LOCAL_TASK,
   // );
+  $items['pr'] = array(
+    'title' => 'My Budget Report',
+    'access arguments' => array('view budget report'),
+    'weight' => 5,
+    'menu_name' => 'main-menu',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('camplus_pr_budget_settings_form'), 
+    'access arguments' => array('view my budget report'), 
+    'file' => 'camplus_pr.pages.inc',
+  );
+  $items['pr/my_budget_report'] = array(
+    'title' => 'My Budget Report',
+    'access arguments' => array('view budget report'),
+    'weight' => 5,
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('camplus_pr_budget_settings_form'), 
+    'access arguments' => array('create purchase_request content'), 
+    'file' => 'camplus_pr.pages.inc',
+  );
   $items['pr/budget_report'] = array(
     'title' => 'Budget Report',
     'access arguments' => array('view budget report'),
@@ -85,16 +105,6 @@ function camplus_pr_menu() {
     'type' => MENU_LOCAL_TASK, 
     'page callback' => 'drupal_get_form',
     'page arguments' => array('camplus_pr_budget_settings_form'), 
-    'file' => 'camplus_pr.pages.inc',
-  );
-  $items['pr/my_budget_report'] = array(
-    'title' => 'My Budget Report',
-    'access arguments' => array('view budget report'),
-    'weight' => 5,
-    'type' => MENU_LOCAL_TASK, 
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('camplus_pr_budget_settings_form'), 
-    'access arguments' => array('create purchase_request content'), 
     'file' => 'camplus_pr.pages.inc',
   );
   $items['node/%node/undraft'] =  array(
@@ -118,13 +128,14 @@ function camplus_pr_undraft($node) {
   // 7|Cancelled
   //pr status.when undraft ,check pending or locked???
   $node->field_pr_status[LANGUAGE_NONE][0]['value'] = 3;
-  $bis_info_all = get_bis_info_all($node->field_budget_items[LANGUAGE_NONE][0]['target_id']);
-  if($bis_info_all['f'] < 0) {
-    $node->field_pr_status[LANGUAGE_NONE][0]['value'] = 2;
-    //TODO auto flag
-    watchdog('f', 'Lockedr', array(), WATCHDOG_NOTICE, 'link');
-  }
+  // $bis_info_all = get_bis_info_all($node->field_budget_items[LANGUAGE_NONE][0]['target_id']);
+  // if($bis_info_all['f'] < 0) {
+  //   $node->field_pr_status[LANGUAGE_NONE][0]['value'] = 2;
+  //   //TODO auto flag
+  //   watchdog('f', 'Lockedr', array(), WATCHDOG_NOTICE, 'link');
+  // }
   node_save($node);
+  // actions_do($action_ids, $object = NULL, $context = NULL, $a1 = NULL, $a2 = NULL)
   drupal_goto('node/'.$node->nid);
 }
 function camplus_pr_status_update($vid, $status_id) {
@@ -340,22 +351,29 @@ function camplus_pr_field_widget_form_alter(&$element, &$form_state, $context) {
 function form_process_field_budget_items(&$element) {
     if(strpos($element['#id'], 'field-budget-items-und')  !== FALSE ) {
         //如果角色不是管理角色，只显示所属部门的子预算项目
-        if(!user_access('camplus budget cross sectoral')) { //
+        global $user;
+        $rid = variable_get('camplus_pr_help_role', '6');
+
+        if(!user_access('camplus budget cross sectoral') ||  in_array($rid, array_keys($user->roles))) { //
           // Load in the current user's group entity ID's
-          $groups = og_get_entity_groups();
-          // Load the entities object ID's
-          $nodes = node_load_multiple($groups['node']);
-          foreach ($nodes as $key => $node) {
-            if($node->type == 'school_department'){
-              $department[] = $key;
-              // break;
-            }else{
-              continue;
+          $department = array();
+          if(!in_array($rid, array_keys($user->roles))) {
+            $groups = og_get_entity_groups();
+            // Load the entities object ID's
+            $nodes = node_load_multiple($groups['node']);
+            foreach ($nodes as $key => $node) {
+              if($node->type == 'school_department'){
+                $department[] = $key;
+                // break;
+              }else{
+                continue;
+              }
             }
-        }
+          }
+     
 
         $budget_items = $element['#options'];
-        global $user;
+
         if(isset($budget_items) && is_array($budget_items))
         foreach ($budget_items as $budget_item_nid => $title) {
           
@@ -363,12 +381,21 @@ function form_process_field_budget_items(&$element) {
 
           if(!$node) continue;
           //去除不是当前学年的
-          if(!isset($node->field_financial_year[LANGUAGE_NONE][0]['value']) || $node->field_financial_year[LANGUAGE_NONE][0]['value'] != camplus_pr_get_current_financial_year() || !in_array($node->field_parents_department[LANGUAGE_NONE][0]['target_id'], $department)){
+          if(!isset($node->field_financial_year[LANGUAGE_NONE][0]['value']) || $node->field_financial_year[LANGUAGE_NONE][0]['value'] != camplus_pr_get_current_financial_year() ){
+            //|| !in_array($node->field_parents_department[LANGUAGE_NONE][0]['target_id'], $department)
             unset($element['#options'][$budget_item_nid]);
           }
+
           $bis_info = get_bis_info_all($budget_item_nid);
           if($bis_info['f'] <= 0) {
             unset($element['#options'][$budget_item_nid]); 
+          }
+          $rid = variable_get('camplus_pr_help_role', '6');
+
+          if(in_array($rid, array_keys($user->roles))) {
+            continue;
+          }elseif(!in_array($node->field_parents_department[LANGUAGE_NONE][0]['target_id'], $department)){
+            unset($element['#options'][$budget_item_nid]);
           }
           // if($bis_info['g'] == 0) {
           //   dpm('通用余额为0,不可再做预算！');

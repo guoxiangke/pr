@@ -19,7 +19,7 @@
 				$('.multiple-field-budget-items-amount input').each(function(){
 					total += parseFloat($(this).val());
 				});
-				$('.field-name-field-chosen-price input').attr('value',total);
+				$('.field-name-field-chosen-price input').val(total);
 			});
 				
 		}
@@ -31,7 +31,7 @@
 		$('.multiple-field-budget-items-amount input').each(function(){
 			total += parseFloat($(this).val());
 		});
-		$('.field-name-field-chosen-price input').attr('value',total);
+		$('.field-name-field-chosen-price input').val(total);
 	});
 
 });

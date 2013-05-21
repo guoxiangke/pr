@@ -239,15 +239,15 @@ function camplus_pr_settings_form() {
     '#default_value' => variable_get('camplus_pr_lock_function_enable', '0'),
     '#description' => '',
   ); 
-  // $roles = user_roles(TRUE, 'camplus purchase request approvable');
-  // $form['camplus_pr_unlock_role'] = array(
-  //   '#type' => 'select',
-  //   '#title' => t('Choose which Role can unlock:'),
-  //   '#default_value' => variable_get('camplus_pr_unlock_role', '6'),
-  //   '#options' => $roles,
-  //   '#description' => '',
-  //   '#required' => TRUE,
-  // ); 
+  $roles = user_roles(TRUE, 'camplus purchase request approvable');
+  $form['camplus_pr_unlock_role'] = array(
+    '#type' => 'select',
+    '#title' => t('Choose which Role can unlock:'),
+    '#default_value' => variable_get('camplus_pr_unlock_role', '6'),
+    '#options' => $roles,
+    '#description' => '',
+    '#required' => TRUE,
+  ); 
   $form['camplus_pr_help_staff_enable'] = array(
     '#type' => 'checkbox',
     '#title' => t('Enable Office Submission'),
@@ -398,8 +398,8 @@ function camplus_pr_budget_settings_form() {
   }
   $public_groups = druedu_user_get_nodes_by_group('school_department');
   foreach ($public_groups as $g_nid => $g_node) {
-
-    if(arg(1) == 'my_budget_report') {
+    
+    if(arg(1) == 'my_budget_report' || (arg(0) == 'pr' && arg(1) === NULL)) {
       if(!og_is_member($group_type = 'node', $g_nid, $entity_type = 'user', $entity = NULL, $states = array(OG_STATE_ACTIVE)))
         continue;
     }
@@ -499,10 +499,14 @@ function theme_camplus_pr_budget_settings_form($variables) {
     t('max余额'),
     t('Mixable Key'),
     t('通用余额'),
-    t('Operations')
+    // t('Operations')
     // array('data' => , 'colspan' => 2)
     );
-
+  global $user;
+  if(user_access('camplus budget settings') || in_array('administrator',$user->roles)) {
+    // unset($header[ t('Operations')]);
+    array_push($header,t('Operations'));
+  }
   foreach (element_children($form['groups']) as $key=>$gid) {
   
     $group = &$form['groups'][$gid];
@@ -596,7 +600,11 @@ function theme_camplus_pr_budget_settings_form($variables) {
           $row[] = '-';
         }
         $row[] = get_bi_mixable_amount($gid);//'通用余额';
-        $row[] = l(t('setting'), 'node/' . $gid.'/edit');
+        if(user_access('camplus budget settings')) {
+          $row[] = l(t('setting'), 'node/' . $gid.'/edit');
+        }else{
+           // $row[] = '-';
+        }
       }else {
         $row[] ='';//Amount
         $row[] ='';//已批支出
@@ -606,7 +614,11 @@ function theme_camplus_pr_budget_settings_form($variables) {
         $row[] ='';//max余额
         $row[] ='';//Mixable Key
         $row[] ='';//通用余额
-        $row[] ='';//l(t('edit'), 'node/' . $gid.'/edit');
+        if(user_access('camplus budget settings')) {
+          $row[] ='';//l(t('edit'), 'node/' . $gid.'/edit');
+        }else{
+           // $row[] = '-';
+        }
       }
 
       $rows[$gid] = array('data' => $row, 'class' => array('draggable','locked'));
