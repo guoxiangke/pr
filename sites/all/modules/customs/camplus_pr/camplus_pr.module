@@ -184,7 +184,19 @@ function camplus_pr_node_view($node, $view_mode, $langcode) {
       unset($node->content['field_mixable_key']);
     }  
   }
-
+  //如果locked，除非unlockrole，其他人不允许看到该节点 lock=2
+  
+  if($node->type == 'purchase_request' && $node->field_pr_status[LANGUAGE_NONE][0]['value'] == 2 && $node->uid != $user->uid) {
+    // $flag = flag_load('pr_lock');
+    // dvm(flag_flag_access($flag, $node->nid, 'flag',$user));
+    // dpm($user->roles,variable_get('camplus_pr_unlock_role', '6'));
+    if(!in_array(variable_get('camplus_pr_unlock_role', '6'), array_keys($user->roles))) {
+      drupal_set_message(t('You cannot see loced PR!'), 'warning', FALSE);
+      drupal_access_denied();
+      module_invoke_all('exit');
+      exit();
+    }
+  }
 }
 /**
  * Implements hook_permission().
@@ -203,12 +215,14 @@ function camplus_pr_permission() {
       'title' => t('Non-Departmental Submission for Purchase Request'),//跨部门 add 预算 
       'restrict access' => TRUE,
     ),
-
     'view all purchase request' => array(
       'title' => t('View All Purchase Request'),
     ),
-    'view my budget report' => array(
-      'title' => t('View My Budget Report'),
+     'view loked purchase request' => array(
+      'title' => t('View Loked Purchase Request'),
+    ),
+     'view my budget report' => array(
+      'title' => t('View My Budget Report(group specific role)'),
     ),
     'view budget report' => array(
       'title' => t('View Budget Report'),
@@ -617,10 +631,15 @@ function camplus_pr_flag_access($flag, $content_id, $action, $account) {
       if($debug) dpm('已经标记Cancel，不可再标记Paid',__LINE__);
       return FALSE;
     }
-    if($flag->name == 'cancel' && isset($approve_status['flags']['paid']) && $approve_status['flags']['paid'] ){
-      if($debug) dpm('已经标记Paid，不可再标记Cancel',__LINE__);
-      return FALSE;
+    //6 == completed paid.
+    //1 == draft. when draft .can not flag paid.
+    if($flag->name == 'cancel') {
+     if($node->field_pr_status[LANGUAGE_NONE][0]['value'] == 6 || $node->field_pr_status[LANGUAGE_NONE][0]['value'] == 1 ){// && isset($approve_status['flags']['paid']) && $approve_status['flags']['paid'] 
+            if($debug) dpm('已经标记Paid，不可再标记Cancel',__LINE__);
+            return FALSE;
+       }
     }
+     
     //还未全部审核/REJECT，manager不可标记paid
     if($flag->name == 'paid' &&($approve_status['workflow_status'] == 'pending' ||$approve_status['workflow_status'] == 'reject')){
       if($debug) dpm('还未全部审核，manager不可标记paid!',__LINE__);

@@ -59,6 +59,12 @@ function rate_pr_condition_lock($node) {
   if(!variable_get('camplus_pr_lock_function_enable', '0')) {
     return FALSE;
   }
+  //指定角色 unlock时 fix
+  global $user;
+  if(in_array(variable_get('camplus_pr_unlock_role', '6'), array_keys($user->roles))) {
+    watchdog('指定角色 unlock时 fix', '指定角色 unlock时 fix', array(), WATCHDOG_NOTICE, 'link');
+    return FALSE;
+  }
   $bis_info_all = get_bis_info_all($node->field_budget_items[LANGUAGE_NONE][0]['target_id']);
   if($bis_info_all['f'] < 0) {
     watchdog('locked pr1', 'message', array(), WATCHDOG_NOTICE, 'link');

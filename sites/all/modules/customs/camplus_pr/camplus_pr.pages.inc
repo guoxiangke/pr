@@ -491,12 +491,13 @@ function theme_camplus_pr_budget_settings_form($variables) {
   $header = array(
     t('Budget item'),
     t('Weight'),
-    t('Amount'),
-    t('已批支出'),
-    t('待批支出'),
-    t('预算余额'),
+    t('Description'),
+    t('Budget Amount'),
+    t('Approved Expenses'),//已批支出
+    t('Pending Expenses'),//待批支出
+    t('Budget Balance'),//预算余额
     t('Allowance'),
-    t('max余额'),
+    t('Maximum Balance'),//max余额
     t('Mixable Key'),
     t('通用余额'),
     // t('Operations')
@@ -526,12 +527,15 @@ function theme_camplus_pr_budget_settings_form($variables) {
       //$group['weight']['#attributes']['class'] = array('term-weight');
       $form['groups'][$gid]['weight']['#attributes']['class'] = array('group-weight');
       $row[] = drupal_render($form['groups'][$gid]['weight']);
+      
       if($node->type == 'budget_item'){
         if(isset($node->field_pr_budget[LANGUAGE_NONE])) {
           $field_pr_budget = $node->field_pr_budget[LANGUAGE_NONE][0]['value'];
+          $row[] = $node->body[LANGUAGE_NONE][0]['safe_value'];
           $row[] = $field_pr_budget;
         }else{ 
           $field_pr_budget = 0;
+          $row[] = '-';
           $row[] = '-';
         }
        //已批支出 get all PRs
@@ -607,6 +611,7 @@ function theme_camplus_pr_budget_settings_form($variables) {
         }
       }else {
         $row[] ='';//Amount
+        $row[] ='';//des
         $row[] ='';//已批支出
         $row[] ='';//待批支出
         $row[] ='';//预算余额
