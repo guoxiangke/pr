@@ -134,6 +134,20 @@ function camplus_pr_range_settings_form() {
       '#prefix' => 'HK$',
       '#size' => 20, 
     );
+    $camplus_pr_file_settings = variable_get('camplus_pr_file_settings');
+    $form[$i]["pr_quofile_require_$i"] = array(
+      '#type' => 'checkbox',
+      '#default_value' => $camplus_pr_file_settings["pr_quofile_require_$i"],
+    );
+    $form[$i]["pr_quo_file_no_$i"] = array(
+      '#type' => 'textfield',
+      '#default_value' => $camplus_pr_file_settings["pr_quo_file_no_$i"],
+      '#size' => 2, 
+    );
+    $form[$i]["pr_ref_file_require_$i"] = array(
+      '#type' => 'checkbox',
+      '#default_value' => $camplus_pr_file_settings["pr_ref_file_require_$i"],
+    );
     $i++;
   }
 // Add the buttons.
@@ -160,10 +174,12 @@ function camplus_pr_range_settings_form_submit($form, &$form_state) {
       // $range_settings[$key] = $form_state['values'][$key];
       preg_match($pattern, $subject, $matches);
       $range_settings[$matches[0]]['end'] = $form_state['values'][$key];
+    }elseif(preg_match($pattern, $subject, $matches)) {
+      $file_settings[$key] = $form_state['values'][$key];
     }
-  }
 
-  dpm($range_settings,'$range_settings');
+  }
+  variable_set('camplus_pr_file_settings', $file_settings);
   variable_set('camplus_pr_range_settings', $range_settings);
 }
 
@@ -177,6 +193,9 @@ function theme_camplus_pr_range_settings_form($variables) {
       $row[] = $i+1;
       $row[] = drupal_render($form[$i]['range']["pr_range_begin_$i"]);
       $row[] = drupal_render($form[$i]['range']["pr_range_end_$i"]);
+      $row[] = drupal_render($form[$i]["pr_quofile_require_$i"]);;
+      $row[] = drupal_render($form[$i]["pr_quo_file_no_$i"]);;
+      $row[] = drupal_render($form[$i]["pr_ref_file_require_$i"]);;
       $row = array('data' => $row);
       $rows[] = $row;
     }
@@ -184,13 +203,13 @@ function theme_camplus_pr_range_settings_form($variables) {
   if (empty($rows)) {
     $rows[] = array(array('data' => $form['#empty_text'], 'colspan' => '2'));
   }
-  $rows[] = array(array('data' => drupal_render($form['name']) .drupal_render($form['add']), 'colspan' => 4));
-  $header = array(t('No'), t('Begin'), t('End'));
+  $rows[] = array(array('data' => drupal_render($form['name']) .drupal_render($form['add']), 'colspan' => 7));
+  $header = array(t('No.'), t('Beginning price'), t('Ending price'), t('Quotation file required'), t('No. of Ref.Supplier(s)'), t('Ref. Quotation File Required'));
   $output = theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('id' => 'approvable_role')));
   $output .= drupal_render_children($form);
 
 
-  $warning = '<div class="messages warning">Note: The following settings are critical, please make sure you know what your are doing!</div>';
+  $warning = '<div class="messages warning">Enter the Price Rangs(s) in respect to different Approval Hierarchy<br/>Note: The following settings are critical, please make sure you know what your are doing!</div>';
   return $warning.$output;
 }
 

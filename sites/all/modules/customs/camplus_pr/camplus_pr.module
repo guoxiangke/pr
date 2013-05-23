@@ -134,6 +134,12 @@ function camplus_pr_undraft($node) {
   //   //TODO auto flag
   //   watchdog('f', 'Lockedr', array(), WATCHDOG_NOTICE, 'link');
   // }
+  if(is_numeric($node->field_pr_author[LANGUAGE_NONE][0]['target_id'])) {
+    $temp  = $node->field_pr_author[LANGUAGE_NONE][0]['target_id'];
+    $tempuid = $node->uid;
+    $node->uid = $temp;
+    // $node->field_pr_author[LANGUAGE_NONE][0]['target_id'] = $tempuid;
+  }
   node_save($node);
   // actions_do($action_ids, $object = NULL, $context = NULL, $a1 = NULL, $a2 = NULL)
   drupal_goto('node/'.$node->nid);
@@ -279,6 +285,7 @@ function camplus_pr_form_alter(&$form, &$form_state, $form_id) {
       '#suffix' => '</div>',
     );
     $form['#validate'][] = 'purchase_request_node_form_validate';
+    $form['#attached']['js'][] = drupal_get_path('module', 'camplus_pr') . '/camplus_pr.js';;
   }
   //if not open mixable key, == not Enable Budget Pool, hide the field
   //@see node_view & purchase_request_node_form_validate()
@@ -292,6 +299,7 @@ function camplus_pr_form_alter(&$form, &$form_state, $form_id) {
 function purchase_request_node_form_validate($form, &$form_state) {
   // Budget Items field && Budget Items amount field validate
   $department = array();
+  $total = 0;
   if($form_state['input']['fgm_node_purchase_request_form_group_budgets']['fields'])
   foreach ($form_state['input']['fgm_node_purchase_request_form_group_budgets']['fields'] as $key1 => $variable) {
     foreach ($variable as $key => $value) {
@@ -301,6 +309,7 @@ function purchase_request_node_form_validate($form, &$form_state) {
       if(!$value['field_budget_items_amount']['und']['value'] && $value['field_budget_items']['und']!='_none') {
         form_set_error('og_group_ref[und]['.$key1.'][default]', t('Budget Items amount必填，因另一个有值！'));
       }
+      $total += $value['field_budget_items_amount']['und']['value'];
       $field_budget_items[$key] = $value['field_budget_items']['und'];
       if($field_budget_items[$key] == '_none') {
         form_set_error('[field_budget_items_amount][und][value]', t('预算项目请选择一个值'));
@@ -341,6 +350,69 @@ function purchase_request_node_form_validate($form, &$form_state) {
   // devel 显示用户输入值
   // dpm($field_budget_items,'$field_budget_items');
   // dpm($field_budget_items_amounts,'$field_budget_items_amounts');
+    $total += $form_state['input']['field_payment_from_students'][LANGUAGE_NONE][0]['value'];
+    $camplus_pr_range_settings = variable_get('camplus_pr_range_settings'); 
+    // watchdog('camplus_pr-field_chosen_price', $total, array(), WATCHDOG_NOTICE, 'link');
+    foreach ($camplus_pr_range_settings as $key => $value) {
+      if($value['end']-$total >= 0) {
+        $approve_rang = $key;
+        break;
+      }
+    }
+    $camplus_pr_file_settings = variable_get('camplus_pr_file_settings');
+    $pr_quofile_require = $camplus_pr_file_settings["pr_quofile_require_$approve_rang"];
+
+    $pr_quo_file_no = $camplus_pr_file_settings["pr_quo_file_no_$approve_rang"];
+    $pr_ref_file_require = $camplus_pr_file_settings["pr_ref_file_require_$approve_rang"];
+    // $file_settings = variable_get('camplus_pr_file_settings');
+    // dpm($file_settings);    
+    if($pr_quofile_require && !$form_state['input']['field_pr_quotation_file'][LANGUAGE_NONE][0]['fid']) {
+      form_set_error('files[field_pr_quotation_file_und_0]', t('must have quotation_file'));
+    }
+    if($pr_ref_file_require) {
+      foreach ($form_state['input']['fgm_node_purchase_request_form_group_referenced']['fields']['items'] as $key => $fields) {
+        foreach ($fields as $field_name => $value) {
+          if($field_name == 'field_pr_ref_quotation_file') {
+            if(!$value[LANGUAGE_NONE][0]['fid']){
+
+              dpm( $field_name.t('must have pr_ref_file_require'));
+               form_set_error('files[field_pr_quotation_file_und_0]', t('must have pr_ref_file_require'));
+            };
+          }
+        }
+      }
+    }
+
+    foreach ($form_state['input']['fgm_node_purchase_request_form_group_referenced']['fields']['items'] as $key => $fields) {
+      foreach ($fields as $field_name => $value) {
+        if($field_name != 'field_pr_ref_quotation_file') {
+          if(empty($value[LANGUAGE_NONE]['value'])){
+            // dpm( $field_name.t('must have value'));
+             form_set_error('', $field_name.t(' Must have value'));
+          };
+        }else {
+
+        }
+      }
+    }
+    if($pr_quo_file_no != 0 && $pr_quo_file_no != count($form_state['input']['fgm_node_purchase_request_form_group_referenced']['fields']['items']) ) {
+      
+    // dpm($pr_quo_file_no.'----',count($form_state['input']['fgm_node_purchase_request_form_group_referenced']['fields']['items']));
+      form_set_error('[field_budget_items_amount][und][value]', t('must have '.$pr_quo_file_no .'reference file'));
+    }
+    //['field_pr_quotation_file'][LANGUAGE_NONE][0]['fid']
+
+    // set field_pr_staff  == current user;
+    global $user;
+    $form_state['input']['field_pr_staff'][LANGUAGE_NONE] = $user->uid;
+    $form_state['values']['field_pr_staff'][LANGUAGE_NONE][0]['target_id'] = $user->uid;
+    //set field_pr_author == node->uid
+    if(is_numeric($form_state['input']['field_pr_author'][LANGUAGE_NONE])){
+      $form_state['values']['uid'][LANGUAGE_NONE] = $form_state['input']['field_pr_author'][LANGUAGE_NONE];
+    }
+    dpm($form_state,$total);
+
+    // form_set_error('[field_budget_items_amount][und][value]', t('test!!!'));
 }
 
 

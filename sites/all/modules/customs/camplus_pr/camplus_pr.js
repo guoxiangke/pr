@@ -14,24 +14,57 @@
 			});
 
 			$(".field-name-field-chosen-price input").attr("disabled","disabled");
-			$('.multiple-field-budget-items-amount input').blur(function(){
-				total = 0;
+			countTotalBI();
+			function countTotalBInoblur() {
 				$('.multiple-field-budget-items-amount input').each(function(){
-					total += parseFloat($(this).val());
+					total = 0;
+					$('.multiple-field-budget-items-amount input').each(function(){
+						total += parseFloat($(this).val());
+					});
+					total += parseFloat($('#edit-field-payment-from-students input').val());
+					$('.field-name-field-chosen-price input').val(total);
 				});
-				$('.field-name-field-chosen-price input').val(total);
+			}
+
+			$('#edit-field-payment-from-students input').blur(function(){
+				countTotalBInoblur();
 			});
-				
+			$('input[value=Save]').click(function(e){
+				// e.preventDefault();
+				countTotalBInoblur();
+			});
+			
 		}
 	}
 	
 	$(".field-name-field-chosen-price input").attr("disabled","disabled");
-	$('.multiple-field-budget-items-amount input').blur(function(){
-		total = 0;
-		$('.multiple-field-budget-items-amount input').each(function(){
-			total += parseFloat($(this).val());
+	function countTotalBI() {
+		$('.multiple-field-budget-items-amount input').blur(function(){
+			total = 0;
+			$('.multiple-field-budget-items-amount input').each(function(){
+				total += parseFloat($(this).val());
+			});
+			total += parseFloat($('#edit-field-payment-from-students input').val());
+			$('.field-name-field-chosen-price input').val(total);
 		});
-		$('.field-name-field-chosen-price input').val(total);
-	});
+	}
+	countTotalBI();
+	function countTotalBInoblur() {
+		$('.multiple-field-budget-items-amount input').each(function(){
+			total = 0;
+			$('.multiple-field-budget-items-amount input').each(function(){
+				total += parseFloat($(this).val());
+			});
+			total += parseFloat($('#edit-field-payment-from-students input').val());
+			$('.field-name-field-chosen-price input').val(total);
+		});
+	}
 
+	$('#edit-field-payment-from-students input').blur(function(){
+		countTotalBInoblur();
+	});
+	$('input[value=Save]').click(function(e){
+		// e.preventDefault();
+		countTotalBInoblur();
+	});
 });
