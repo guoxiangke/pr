@@ -446,13 +446,28 @@ function camplus_pr_budget_settings_form() {
   );
   $years_count = variable_get('camplus_pr_show_budget_history', '1');//this year & next year
   $history_link = '';
+  $base_path = url(NULL, array('absolute' => TRUE)) . (variable_get('clean_url', 0) ? '' : '?q=');
+  $base_path .= 'pr/'.arg(1);
   while ($years_count) {
-    $history_link .= l(date('Y')-$years_count,'admin/people/advanced_management/budget/settings',array ('query' => array ('financial_year' =>date('Y')-$years_count)) ).'&nbsp;&nbsp;';
+    $history_link .= l((date('Y')-$years_count-1).' - '.(date('Y')-$years_count),'pr/'.arg(1),array ('query' => array ('financial_year' =>date('Y')-$years_count)) ).'&nbsp;&nbsp;';
+    $options[$base_path.'&financial_year='.(date('Y')-$years_count)] = (date('Y')-$years_count-1).' - '.(date('Y')-$years_count);
     $years_count--;
   }
+  $options[$base_path.'&financial_year='.date('Y')] = (date('Y')-$years_count-1).' - '.(date('Y')-$years_count);
+  $options[$base_path.'&financial_year='.(date('Y')+1)] = (date('Y')-$years_count-1).' - '.(date('Y')-$years_count);
   $form['financial_year'] = array(
-    '#markup' => $history_link.'&nbsp;&nbsp;'.l(date('Y'),'admin/people/advanced_management/budget/settings').'&nbsp;&nbsp;'.l(date('Y')+1,'admin/people/advanced_management/budget/settings',array ('query' => array ('financial_year' =>date('Y')+1)) ),
+    '#markup' => $history_link.'&nbsp;&nbsp;'.l((date('Y')-1).' - '.date('Y'),'pr/'.arg(1)).'&nbsp;&nbsp;'.l(date('Y').' - '.(date('Y')+1),'pr/'.arg(1),array ('query' => array ('financial_year' =>date('Y')+1)) ),
   );
+  
+  $form['select_year'] = array(
+   '#type' => 'select',
+   '#title' => t('Selected'),
+   '#options' => $options,
+   
+  );
+  if(!isset($_REQUEST['financial_year'])) {
+    $form['select_year']['#default_value'] = $base_path.'&financial_year='.date('Y');
+  }
   // l($text = 10, $path = 'search/all', $options = array ('path' => '/search/all', 'query' => array ('s' => 'teacher', 'items_per_page' => 10)));
   $order = 1;
   if(isset($groups['-1']))unset($groups['-1']);
@@ -490,6 +505,16 @@ function camplus_pr_budget_settings_form() {
     $order++;
 
   }
+  drupal_add_js('jQuery(document).ready(function () { jQuery(function(){
+      // bind change event to select
+      jQuery("#camplus-pr-budget-settings-form #edit-select-year").bind("change", function () {
+          var url = jQuery(this).val(); // get selected value
+          if (url) { // require a URL
+              window.location = url; // redirect
+          }
+          return false;
+      });
+    });});', 'inline');
   return $form;
 }
 
@@ -623,10 +648,8 @@ function theme_camplus_pr_budget_settings_form($variables) {
           $row[] = '-';
         }
         $row[] = get_bi_mixable_amount($gid);//'通用余额';
-        if(user_access('camplus budget settings')) {
+        if(user_access('camplus budget settings') || in_array('administrator',$user->roles)) {
           $row[] = l(t('setting'), 'node/' . $gid.'/edit');
-        }else{
-           // $row[] = '-';
         }
       }else {
         $row[] ='';//Amount
@@ -638,10 +661,8 @@ function theme_camplus_pr_budget_settings_form($variables) {
         $row[] ='';//max余额
         $row[] ='';//Mixable Key
         $row[] ='';//通用余额
-        if(user_access('camplus budget settings')) {
+        if(user_access('camplus budget settings') || in_array('administrator',$user->roles)) {
           $row[] ='';//l(t('edit'), 'node/' . $gid.'/edit');
-        }else{
-           // $row[] = '-';
         }
       }
 

@@ -134,7 +134,7 @@ function camplus_pr_undraft($node) {
   //   //TODO auto flag
   //   watchdog('f', 'Lockedr', array(), WATCHDOG_NOTICE, 'link');
   // }
-  if(is_numeric($node->field_pr_author[LANGUAGE_NONE][0]['target_id'])) {
+  if(isset($node->field_pr_author[LANGUAGE_NONE][0]['target_id']) && is_numeric($node->field_pr_author[LANGUAGE_NONE][0]['target_id'])) {
     $temp  = $node->field_pr_author[LANGUAGE_NONE][0]['target_id'];
     $tempuid = $node->uid;
     $node->uid = $temp;
@@ -294,7 +294,10 @@ function camplus_pr_form_alter(&$form, &$form_state, $form_id) {
     if(!variable_get('camplus_pr_enable_mixable_key', 0)) {
       unset($form['field_mixable_key']);
     }
+    dpm($form);
   }
+
+
 }
 function purchase_request_node_form_validate($form, &$form_state) {
   // Budget Items field && Budget Items amount field validate
@@ -383,6 +386,7 @@ function purchase_request_node_form_validate($form, &$form_state) {
       }
     }
 
+    if($pr_quo_file_no != 0 && $form_state['values']['field_pr_sole_supplier'][LANGUAGE_NONE][0]['value'] != 1) 
     foreach ($form_state['input']['fgm_node_purchase_request_form_group_referenced']['fields']['items'] as $key => $fields) {
       foreach ($fields as $field_name => $value) {
         if($field_name != 'field_pr_ref_quotation_file') {
@@ -395,9 +399,7 @@ function purchase_request_node_form_validate($form, &$form_state) {
         }
       }
     }
-    if($pr_quo_file_no != 0 && $pr_quo_file_no != count($form_state['input']['fgm_node_purchase_request_form_group_referenced']['fields']['items']) ) {
-      
-    // dpm($pr_quo_file_no.'----',count($form_state['input']['fgm_node_purchase_request_form_group_referenced']['fields']['items']));
+    if($pr_quo_file_no != 0 && $form_state['values']['field_pr_sole_supplier'][LANGUAGE_NONE][0]['value'] != 1 && $pr_quo_file_no != count($form_state['input']['fgm_node_purchase_request_form_group_referenced']['fields']['items']) ) {
       form_set_error('[field_budget_items_amount][und][value]', t('must have '.$pr_quo_file_no .'reference file'));
     }
     //['field_pr_quotation_file'][LANGUAGE_NONE][0]['fid']
@@ -501,6 +503,9 @@ function form_process_field_budget_items(&$element) {
  */
 function camplus_pr_admin_paths_alter(&$paths) {
   $paths['node/add/purchase-request'] = FALSE;
+  $paths['node/add/budget-item'] = FALSE;  
+  $paths['node/add/school-department'] = FALSE;
+  
   $paths['node/%node/edit'] = FALSE;
 }
 /**
