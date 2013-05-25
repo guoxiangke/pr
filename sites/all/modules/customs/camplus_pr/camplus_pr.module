@@ -268,7 +268,7 @@ function camplus_pr_form_alter(&$form, &$form_state, $form_id) {
   }
 
   if($form_id =='purchase_request_node_form'){
-    drupal_add_js(drupal_get_path('module', 'camplus_pr').'/camplus_pr.js');
+    // drupal_add_js(drupal_get_path('module', 'camplus_pr').'/camplus_pr.js');
     $form['bi_warning'] = array(
       '#markup' => 'Note:
 <br/>1. The Amount Request should be lower than the Applicable Balance remained in the input form
@@ -284,7 +284,7 @@ function camplus_pr_form_alter(&$form, &$form_state, $form_id) {
       '#prefix' => '<div id="bi_warning" class="messages warning">',
       '#suffix' => '</div>',
     );
-    $form['#validate'][] = 'purchase_request_node_form_validate';
+    // $form['#validate'][] = 'purchase_request_node_form_validate';
     $form['#attached']['js'][] = drupal_get_path('module', 'camplus_pr') . '/camplus_pr.js';;
   }
   //if not open mixable key, == not Enable Budget Pool, hide the field
