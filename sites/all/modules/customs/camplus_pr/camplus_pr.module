@@ -284,7 +284,7 @@ function camplus_pr_form_alter(&$form, &$form_state, $form_id) {
       '#prefix' => '<div id="bi_warning" class="messages warning">',
       '#suffix' => '</div>',
     );
-    // $form['#validate'][] = 'purchase_request_node_form_validate';
+    $form['#validate'][] = 'purchase_request_node_form_validate';
     $form['#attached']['js'][] = drupal_get_path('module', 'camplus_pr') . '/camplus_pr.js';;
   }
   //if not open mixable key, == not Enable Budget Pool, hide the field
@@ -328,6 +328,7 @@ function purchase_request_node_form_validate($form, &$form_state) {
 
       $field_budget_items_amounts[$key] = $value['field_budget_items_amount']['und']['value'];
       $bis_info_all = get_bis_info_all($field_budget_items[$key]);
+      dpm($bis_info_all);
   // form_set_error('[field_budget_items_amount][und][value]', t($field_budget_items_amounts[$key].'最大余额为负时'.$bis_info_all['f'].',不能预算！'));
       if($bis_info_all['f'] <= 0) {//最大余额 
         form_set_error('[field_budget_items_amount][und][value]', t('The balance in the Budget item you applied is already negative! Cannot Apply this Budget Item!'));//最大余额为负时,不能预算！
@@ -375,7 +376,7 @@ function purchase_request_node_form_validate($form, &$form_state) {
       foreach ($form_state['input']['fgm_node_purchase_request_form_group_referenced']['fields']['items'] as $key => $fields) {
         foreach ($fields as $field_name => $value) {
           if($field_name == 'field_pr_ref_quotation_file') {
-            if(!$value[LANGUAGE_NONE][0]['fid']){
+            if(!$value[LANGUAGE_NONE][0]['fid']) {
 
               dpm( $field_name.t('must have pr_ref_file_require'));
                form_set_error('files[field_pr_quotation_file_und_0]', t('must have pr_ref_file_require'));
