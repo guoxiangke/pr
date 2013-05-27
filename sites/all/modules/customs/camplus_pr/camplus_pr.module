@@ -118,6 +118,19 @@ function camplus_pr_menu() {
 }
 
 function camplus_pr_undraft($node) {
+  //如果预算还有，才可以通过
+  $field_budget_items_amount = 0;
+  foreach ($node->field_budget_items_amount[LANGUAGE_NONE] as $key => $value) {
+    $field_budget_items_amount +=  $value['value'];
+  }
+  $total = $field_budget_items_amount + $node->field_payment_from_students[LANGUAGE_NONE][0]['value'];
+  $budget_nid = $node->field_budget_items[LANGUAGE_NONE][0]['target_id'];
+  $bis_info_all = get_bis_info_all($budget_nid);
+  if( $total > $bis_info_all['g']) {
+    drupal_set_message(t('Sorry, your requested amount currently exceeds the Maximum Budget in your Department, your application CANNOT be submitted!'), 'warning', FALSE);
+    drupal_goto('node/'.$node->nid);
+    //return
+  }
   $node->status = 1;
   // 1|Draft
   // 2|Locked
