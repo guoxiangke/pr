@@ -61,7 +61,7 @@ function camplus_pr_menu() {
     'weight' =>-25,
   );
   $items['admin/config/camplus/pr_settings/pr_approve_settings'] = array(
-    'title' => t('PR approve workflow settings'),
+    'title' => t('Approval Workflow'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('camplus_pr_approve_settings_form'),
     'access arguments' => array('camplus bi settings'),

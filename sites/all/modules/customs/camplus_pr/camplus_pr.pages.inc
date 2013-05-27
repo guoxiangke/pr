@@ -399,7 +399,7 @@ function theme_camplus_pr_approve_settings_form($variables) {
     $row = array('data' => $row);
     $rows[] = $row;
   }
-  $header[] = 'Range'.'(HK$)';
+  $header[] = 'Price Range (HK$)';
   foreach ($order as $key => $role) {
     $header[] = $role['name'];
   }
@@ -409,7 +409,7 @@ function theme_camplus_pr_approve_settings_form($variables) {
   }
   $output = theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('id' => 'approvable_role')));
   $output .= drupal_render_children($form);
-  $warning = '<div class="messages warning">Note: The following settings are critical, please make sure you know what your are doing!</div>';
+  $warning = '<div class="messages warning">Click the Role(s) involved in the Approval Workflow process with respected Price Range<br>Note: The following settings are critical, please make sure you know what your are doing!</div>';
   return $warning.$output;
 }
 
