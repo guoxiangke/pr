@@ -6,10 +6,11 @@ function camplus_pr_roles_involved_settings_form($form, &$form_state) {
   $roles = user_roles(TRUE, 'camplus purchase request approvable');
   $count = 0;
   $camplus_pr_approvable_role_involved = variable_get('camplus_pr_approvable_role_involved','');
-  $default_value = 0;
+  
 	foreach ($roles as $key => $role_name) {
 		if (in_array($role_name, array('administrator'))) continue;
 
+    $default_value = 0;
     if($camplus_pr_approvable_role_involved){
       if(isset($camplus_pr_approvable_role_involved[$role_name]))
       $default_value =  $camplus_pr_approvable_role_involved[$role_name];
