@@ -340,7 +340,10 @@ function purchase_request_node_form_validate($form, &$form_state) {
 
       // dpm($total);    
       if($total > $bis_info_all['g']) {
-        form_set_error('[field_budget_items_amount][und][value]', t('不能超过Maximum Balance.'));//不能超过通用余额:'.$bis_info_all['g'].'如果数值小于提示数值，此时原因可能是别人通用你的l
+        form_set_error('[field_budget_items_amount][und][value]', t('Your Requested Amount exceeds the Maximum Budget in your Department, your application CANNOT be submitted!'));
+      }
+      if($total > $bis_info_all['d']) {
+        drupal_set_message(t('Your Requested Amount exceeds the Budgeted Amount, your application may not be approved!'), 'warning', FALSE);
       }
       if($field_budget_items_amounts[$key] > $bis_info_all['g']) {//通用余额  get_bi_mixable_amount($field_budget_items[$key]
         form_set_error('[field_budget_items_amount][und][value]', t('The Budget Item Amount you applied may be used by other Budget Item(s) in the same Budget Pool. So you cannot request this amount although it is smaller than the balance.'));//不能超过通用余额:'.$bis_info_all['g'].'如果数值小于提示数值，此时原因可能是别人通用你的l
