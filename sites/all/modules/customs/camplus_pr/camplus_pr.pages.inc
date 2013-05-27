@@ -111,13 +111,15 @@ function theme_camplus_pr_roles_weight_settings_form($variables) {
     }
   }
   if (empty($rows)) {
-    $rows[] = array(array('data' => 'notings yet', 'colspan' => '2'));
+    $rows[] = array(array('data' => t('no any role'), 'colspan' => '2'));
   }
 	$rows[] = array(array('data' => drupal_render($form['name']) .drupal_render($form['add']), 'colspan' => 4));
   $header = array(t('Role'), t('Weight for approvable role'));
   $output = theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('id' => 'approvable_role')));
   $output .= drupal_render_children($form);
-  $warning = '<div class="messages warning">The first role(Min number weight) must be The Department specific role. </div>';
+  $warning = '<div class="messages warning">'.t('Note: The minimum weight MUST be assigned to Department specific role, e.g. set 0 for Department Head role
+Note: The minimum weight MUST be assigned to Department specific role, e.g. set 1 for Department Head role
+.').'</div>';
   return $warning . $output;
 }
 
@@ -216,7 +218,7 @@ function theme_camplus_pr_range_settings_form($variables) {
   $output .= drupal_render_children($form);
 
 
-  $warning = '<div class="messages warning">Enter the Price Rangs(s) in respect to different Approval Hierarchy<br/>Note: The following settings are critical, please make sure you know what your are doing!</div>';
+  $warning = '<div class="messages warning">'.t('Enter the Price Rangs(s) in respect to different Approval Hierarchy<br/>Note: The following settings are critical, please make sure you know what your are doing!').'</div>';
   return $warning.$output;
 }
 
@@ -324,7 +326,7 @@ function camplus_pr_approve_settings_form() {
   ksort($order,SORT_NUMERIC);
 
   $workflow_settings = variable_get('camplus_pr_workflow_settings', '');
-  dpm($workflow_settings);
+  // dpm($workflow_settings);
   for($i = 0; $i < $count_rows; $i++) {
     foreach ($order as $key => $role) {
       $default_value = 0;
@@ -409,7 +411,8 @@ function theme_camplus_pr_approve_settings_form($variables) {
   }
   $output = theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('id' => 'approvable_role')));
   $output .= drupal_render_children($form);
-  $warning = '<div class="messages warning">Click the Role(s) involved in the Approval Workflow process with respected Price Range<br>Note: The following settings are critical, please make sure you know what your are doing!</div>';
+  $warning = '<div class="messages warning">'.t('Click the Role(s) involved in the Approval Workflow process with respected Price Range<br>Note: The following settings are critical, please make sure you know what your are doing!
+    ').'</div>';
   return $warning.$output;
 }
 
