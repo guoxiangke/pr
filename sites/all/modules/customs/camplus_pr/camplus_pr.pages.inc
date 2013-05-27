@@ -380,7 +380,7 @@ function theme_camplus_pr_approve_settings_form($variables) {
   $camplus_pr_approvable_role_involved = variable_get('camplus_pr_approvable_role_involved','');
   foreach ($roles as $rid => $role_name) {
     if (in_array($role_name, array('administrator'))) continue;
-    if(!$camplus_pr_approvable_role_involved[$role_name]) continue;
+    if(!isset($camplus_pr_approvable_role_involved[$role_name])) continue;
     $weight = $camplus_pr_approvable_role_weight[$role_name];
     $order[$weight] = array('rid'=>$rid,'name'=>$role_name);
   }
