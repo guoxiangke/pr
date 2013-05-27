@@ -263,7 +263,7 @@ function camplus_pr_settings_form() {
     '#title' => t('Enable Email notification to'),
     '#default_value' => variable_get('camplus_pr_email_notification_addr', 'admin@admin.com'),
     '#description' => '',
-    '#required' => TRUE,
+    // '#required' => TRUE,
   );
   $form['camplus_pr_lock_function_enable'] = array(
     '#type' => 'checkbox',

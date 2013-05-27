@@ -131,6 +131,13 @@ function camplus_pr_undraft($node) {
     drupal_goto('node/'.$node->nid);
     //return
   }
+  //variable_get('camplus_pr_enable_mixable_key', 1), 不可通用时
+  if(!variable_get('camplus_pr_enable_mixable_key') ) {
+    if($total > $bis_info_all['f']) {
+        drupal_set_message(t('Sorry, not enable mixable key,cannot submit!'), 'warning', FALSE);
+        drupal_goto('node/'.$node->nid);
+    }
+  }
   $node->status = 1;
   // 1|Draft
   // 2|Locked
