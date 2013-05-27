@@ -134,7 +134,8 @@ function camplus_pr_undraft($node) {
   //variable_get('camplus_pr_enable_mixable_key', 1), 不可通用时
   if(!variable_get('camplus_pr_enable_mixable_key') ) {
     if($total > $bis_info_all['f']) {
-        drupal_set_message(t('Sorry, not enable mixable key,cannot submit!'), 'warning', FALSE);
+        drupal_set_message(t('Sorry, your requested amount currently exceeds the Maximum Budget in your Department, your application CANNOT be submitted!'), 'warning', FALSE);
+        //Sorry, not enable mixable key,cannot submit!
         drupal_goto('node/'.$node->nid);
     }
   }
@@ -440,7 +441,8 @@ function purchase_request_node_form_validate($form, &$form_state) {
     if(is_numeric($form_state['input']['field_pr_author'][LANGUAGE_NONE])){
       $form_state['values']['uid'][LANGUAGE_NONE] = $form_state['input']['field_pr_author'][LANGUAGE_NONE];
     }
-
+    drupal_set_message(t('This Application has not yet been submitted for Apporval Process.
+ <br>Reminded that, due to submission(s) by others, the Applicable Balance may change when you "Submit".'), 'warning', FALSE);
     // form_set_error('[field_budget_items_amount][und][value]', t('test!!!'));
 }
 
