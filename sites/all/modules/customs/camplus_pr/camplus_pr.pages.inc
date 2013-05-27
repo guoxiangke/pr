@@ -181,6 +181,9 @@ function camplus_pr_range_settings_form_submit($form, &$form_state) {
   }
   variable_set('camplus_pr_file_settings', $file_settings);
   variable_set('camplus_pr_range_settings', $range_settings);
+  foreach ($variable as $key => $value) {
+    $return[$key] = $value['begin']. ' - '. $value['end']; 
+  }
 }
 
 function theme_camplus_pr_range_settings_form($variables) {
@@ -415,6 +418,7 @@ function camplus_pr_budget_settings_form() {
   }else {
     $financial_year = NULL;
   }
+  $groups = array();
   $public_groups = druedu_user_get_nodes_by_group('school_department');
   foreach ($public_groups as $g_nid => $g_node) {
     
@@ -552,6 +556,7 @@ function theme_camplus_pr_budget_settings_form($variables) {
     // unset($header[ t('Operations')]);
     array_push($header,t('Operations'));
   }
+  $rows = array();
   foreach (element_children($form['groups']) as $key=>$gid) {
   
     $group = &$form['groups'][$gid];

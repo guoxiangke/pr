@@ -192,7 +192,7 @@ function camplus_pr_node_view($node, $view_mode, $langcode) {
   }
   //如果locked，除非unlockrole，其他人不允许看到该节点 lock=2
   
-  if($node->type == 'purchase_request' && $node->field_pr_status[LANGUAGE_NONE][0]['value'] == 2 && $node->uid != $user->uid) {
+  if(arg(0)=='node' && $node->type == 'purchase_request' && $node->field_pr_status[LANGUAGE_NONE][0]['value'] == 2 && $node->uid != $user->uid) {
     // $flag = flag_load('pr_lock');
     // dvm(flag_flag_access($flag, $node->nid, 'flag',$user));
     // dpm($user->roles,variable_get('camplus_pr_unlock_role', '6'));
@@ -972,3 +972,5 @@ function camplus_pr_views_pre_render(&$view) {
   //   dpm($user->roles);
   //   dpm($camplus_pr_approvable_role_involved);
 }
+
+

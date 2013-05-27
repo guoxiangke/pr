@@ -100,7 +100,50 @@ function rate_pr_rules_action_info() {
       'module' => 'rate_pr',
       'group' => t('Customs'),
     ),
+    'rete_pr_og_rules_add_entitys_to_group' => array(
+      'label' => t('2.Subscribe user to all children groups'),
+      // 'arguments' => array(
+      //   'parent_group' => array('type' => 'node', 'label' => t('The new parent group.')),
+      // ),
+      'parameter' => array(
+        'entity' => array(
+          // Do not use type 'entity' but restrict the type to group content type.
+          'type' => array_keys(og_get_all_group_content_entity()),
+          'label' => t('Entity'),
+          'description' => t('The group content which is to be added to a group.'),
+          'wrapped' => TRUE,
+        ),
+        'group' => array(
+          'type' => array_keys(og_get_all_group_entity()),
+          'label' => t('Group'),
+          'wrapped' => TRUE,
+        ),
+      ),
+      // 'base' => 'og_rules_add_entity_to_children_groups',
+      'module' => 'rate_pr',
+      'group' => t('Customs'),
+    ),
   );
+}
+
+/**
+ * Action: Add entity to group.
+ * @see og_rules_add_entity_to_children_groups
+ */
+function rete_pr_og_rules_add_entitys_to_group(EntityDrupalWrapper $entity, EntityDrupalWrapper $group) {
+  // TODO: Add field-name.
+  
+  $values = array(
+    'entity_type' => $entity->type(),
+    'entity' => $entity->value(),
+  );
+  $department_node = $group->value();
+  $all_bis = druedu_user_get_nodes_by_group($department_node->nid, $subject = null, $class = null, $grade_group_content = 'budget_item', $subject_group_content = 'class');
+  foreach ($all_bis as $bi_nid => $bi_node) {
+    og_group($group->type(), $bi_nid, $values);
+    drupal_set_message('joined in '. $bi_node->title,'status', FALSE);
+  }
+  // og_group($group->type(), $group->getIdentifier(), $values);
 }
 /**
  * Condition packages_condition_packagetype
