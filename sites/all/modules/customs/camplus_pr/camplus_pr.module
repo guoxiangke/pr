@@ -328,7 +328,7 @@ function purchase_request_node_form_validate($form, &$form_state) {
 
       $field_budget_items_amounts[$key] = $value['field_budget_items_amount']['und']['value'];
       $bis_info_all = get_bis_info_all($field_budget_items[$key]);
-      dpm($bis_info_all);
+      // dpm($bis_info_all);
   // form_set_error('[field_budget_items_amount][und][value]', t($field_budget_items_amounts[$key].'最大余额为负时'.$bis_info_all['f'].',不能预算！'));
       if($bis_info_all['f'] <= 0) {//最大余额 
         form_set_error('[field_budget_items_amount][und][value]', t('The balance in the Budget item you applied is already negative! Cannot Apply this Budget Item!'));//最大余额为负时,不能预算！
@@ -336,7 +336,12 @@ function purchase_request_node_form_validate($form, &$form_state) {
       //超过最大余额，将要通用别人的
       if(($field_budget_items_amounts[$key] > $bis_info_all['f']) && !variable_get('camplus_pr_enable_mixable_key', 0) ) {//通用余额  get_bi_mixable_amount($field_budget_items[$key]
         form_set_error('[field_budget_items_amount][und][value]', t('You cannot apply amount larger than the Applicable Budget Balance!'));//您只能使用最大余额'.$bis_info_all['f'].' 不能通用 not Enable Budget Pool
-      }      
+      }  
+
+      // dpm($total);    
+      if($total > $bis_info_all['g']) {
+        form_set_error('[field_budget_items_amount][und][value]', t('不能超过Maximum Balance.'));//不能超过通用余额:'.$bis_info_all['g'].'如果数值小于提示数值，此时原因可能是别人通用你的l
+      }
       if($field_budget_items_amounts[$key] > $bis_info_all['g']) {//通用余额  get_bi_mixable_amount($field_budget_items[$key]
         form_set_error('[field_budget_items_amount][und][value]', t('The Budget Item Amount you applied may be used by other Budget Item(s) in the same Budget Pool. So you cannot request this amount although it is smaller than the balance.'));//不能超过通用余额:'.$bis_info_all['g'].'如果数值小于提示数值，此时原因可能是别人通用你的l
       }
@@ -412,7 +417,6 @@ function purchase_request_node_form_validate($form, &$form_state) {
     if(is_numeric($form_state['input']['field_pr_author'][LANGUAGE_NONE])){
       $form_state['values']['uid'][LANGUAGE_NONE] = $form_state['input']['field_pr_author'][LANGUAGE_NONE];
     }
-    dpm($form_state,$total);
 
     // form_set_error('[field_budget_items_amount][und][value]', t('test!!!'));
 }
