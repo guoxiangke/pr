@@ -58,7 +58,7 @@ function camplus_pr_roles_weight_settings_form($form, &$form_state) {
   foreach ($roles as $key => $role_name) {
     if (in_array($role_name, array('administrator'))) continue;
       if($camplus_pr_approvable_role_weight){
-        if(isset($camplus_pr_approvable_role_involved[$role_name]))
+        if(isset($camplus_pr_approvable_role_weight[$role_name]))
         $default_value =  $camplus_pr_approvable_role_weight[$role_name];
       }
     $form[$role_name]['approvable_role_weight'][$role_name] = array(
