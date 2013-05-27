@@ -72,7 +72,7 @@ function camplus_pr_roles_weight_settings_form($form, &$form_state) {
   }
 
   if(!$count) {
-    $form['empty_text'] = array('#markup' => t('没有可用的角色！请为相关角色'.l('添加权限','admin/people/permissions').'“Camplus Purchase Request approvable”'));
+    $form['empty_text'] = array('#markup' => t('There is no role invloved in the Approval Process, please add roles with "Approval for Purchase Request" Permission'));
     return $form;
   }
   // Add the buttons.
@@ -111,7 +111,7 @@ function theme_camplus_pr_roles_weight_settings_form($variables) {
     }
   }
   if (empty($rows)) {
-    $rows[] = array(array('data' => $form['#empty_text'], 'colspan' => '2'));
+    $rows[] = array(array('data' => 'notings yet', 'colspan' => '2'));
   }
 	$rows[] = array(array('data' => drupal_render($form['name']) .drupal_render($form['add']), 'colspan' => 4));
   $header = array(t('Role'), t('Weight for approvable role'));
