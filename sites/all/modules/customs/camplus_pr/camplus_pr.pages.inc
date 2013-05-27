@@ -54,11 +54,15 @@ function camplus_pr_roles_involved_settings_form_submit($form, &$form_state) {
 
 function camplus_pr_roles_weight_settings_form($form, &$form_state) {
   $roles = user_roles(TRUE, 'camplus purchase request approvable');
+  $camplus_pr_approvable_role_involved = variable_get('camplus_pr_approvable_role_involved');
+  // dpm($camplus_pr_approvable_role_involved,'camplus_pr_approvable_role_involved');
   $count = 0;
   $camplus_pr_approvable_role_weight = variable_get('camplus_pr_approvable_role_weight','');
-  $default_value = 'NULL';
+
   foreach ($roles as $key => $role_name) {
+    $default_value = 'NULL';
     if (in_array($role_name, array('administrator'))) continue;
+    if(!$camplus_pr_approvable_role_involved[$role_name]) continue;
       if($camplus_pr_approvable_role_weight){
         if(isset($camplus_pr_approvable_role_weight[$role_name]))
         $default_value =  $camplus_pr_approvable_role_weight[$role_name];
@@ -82,6 +86,7 @@ function camplus_pr_roles_weight_settings_form($form, &$form_state) {
     '#value' => t('Save'),
     '#weight' => 5,
   );
+  dpm($form);
   return  $form;
 }
 
@@ -317,15 +322,18 @@ function camplus_pr_approve_settings_form() {
   $camplus_pr_approvable_role_weight = variable_get('camplus_pr_approvable_role_weight','');
   $camplus_pr_approvable_role_involved = variable_get('camplus_pr_approvable_role_involved','');
   foreach ($roles as $rid => $role_name) {
-    if (in_array($role_name, array('administrator'))) continue;
+    if (in_array($role_name, array('administrator'))) continue; 
+    if(!$camplus_pr_approvable_role_involved[$role_name]) continue;
     if(!isset($camplus_pr_approvable_role_involved[$role_name])) continue;
-    $weight = $camplus_pr_approvable_role_weight[$role_name];
-    $order[$weight] = array('rid'=>$rid,'name'=>$role_name);
+    if(isset($camplus_pr_approvable_role_weight[$role_name])) {
+      $weight = $camplus_pr_approvable_role_weight[$role_name];
+      $order[$weight] = array('rid'=>$rid,'name'=>$role_name);
+    }
   }
   ksort($order,SORT_NUMERIC);
 
   $workflow_settings = variable_get('camplus_pr_workflow_settings', '');
-  // dpm($workflow_settings);
+  dpm($workflow_settings);
   for($i = 0; $i < $count_rows; $i++) {
     foreach ($order as $key => $role) {
       $default_value = 0;
@@ -346,6 +354,7 @@ function camplus_pr_approve_settings_form() {
     '#value' => t('Save'),
     '#weight' => 5,
   );
+  dpm($form);
   return  $form;
 }
 
@@ -383,9 +392,10 @@ function theme_camplus_pr_approve_settings_form($variables) {
   $order = array();
   foreach ($roles as $rid => $role_name) {
     if (in_array($role_name, array('administrator'))) continue;
-    if(!isset($camplus_pr_approvable_role_involved[$role_name])) continue;
-    $weight = $camplus_pr_approvable_role_weight[$role_name];
-    $order[$weight] = array('rid'=>$rid,'name'=>$role_name);
+    if(isset($camplus_pr_approvable_role_weight[$role_name])){
+      $weight = $camplus_pr_approvable_role_weight[$role_name];
+      $order[$weight] = array('rid'=>$rid,'name'=>$role_name);
+    }
   }
   ksort($order,SORT_NUMERIC);  
 
