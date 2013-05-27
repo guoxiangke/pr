@@ -458,20 +458,23 @@ function camplus_pr_budget_settings_form() {
     $years_count--;
   }
   $options[$base_path.'&financial_year='.date('Y')] = (date('Y')-$years_count-1).' - '.(date('Y')-$years_count);
-  $options[$base_path.'&financial_year='.(date('Y')+1)] = (date('Y')-$years_count-1).' - '.(date('Y')-$years_count);
-  $form['financial_year'] = array(
-    '#markup' => $history_link.'&nbsp;&nbsp;'.l((date('Y')-1).' - '.date('Y'),'pr/'.arg(1)).'&nbsp;&nbsp;'.l(date('Y').' - '.(date('Y')+1),'pr/'.arg(1),array ('query' => array ('financial_year' =>date('Y')+1)) ),
-  );
+  $options[$base_path.'&financial_year='.(date('Y')+1)] = (date('Y')-$years_count).' - '.(date('Y')-$years_count+1);
+  // $form['financial_year'] = array(
+  //   '#markup' => $history_link.'&nbsp;&nbsp;'.l((date('Y')-1).' - '.date('Y'),'pr/'.arg(1)).'&nbsp;&nbsp;'.l(date('Y').' - '.(date('Y')+1),'pr/'.arg(1),array ('query' => array ('financial_year' =>date('Y')+1)) ),
+  // );
   
   $form['select_year'] = array(
    '#type' => 'select',
    '#title' => t('Selected'),
-   '#options' => $options,
-   
+   '#options' => $options,   
+   '#default_value' => $base_path.'&financial_year='.(date('Y')+1),
   );
-  if(!isset($_REQUEST['financial_year'])) {
-    $form['select_year']['#default_value'] = $base_path.'&financial_year='.date('Y');
+  if(isset($_REQUEST['financial_year'])) {
+    $form['select_year']['#default_value'] = $base_path.'&financial_year='.$_REQUEST['financial_year'];
   }
+  // if(!isset($_REQUEST['financial_year'])) {
+  //   $form['select_year']['#default_value'] = $base_path.'&financial_year='.date('Y');
+  // }
   // l($text = 10, $path = 'search/all', $options = array ('path' => '/search/all', 'query' => array ('s' => 'teacher', 'items_per_page' => 10)));
   $order = 1;
   if(isset($groups['-1']))unset($groups['-1']);
