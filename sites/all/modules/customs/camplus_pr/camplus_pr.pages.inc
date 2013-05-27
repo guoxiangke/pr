@@ -22,12 +22,13 @@ function camplus_pr_roles_involved_settings_form($form, &$form_state) {
       );
     $count++;
 	}
-  $form['warning_info'] = array('#markup' => t('Note: The following settings are critical, please make sure you know what your are doing! 注意:一经设置，不可取消,可添加不可删减,请管理员慎重操作!'),
+  $form['warning_info'] = array('#markup' => t('Note: The following settings are critical, please make sure you know what your are doing! <br> If you need to remove any role invloved in the Approval Process, please <strong> first uncheck the whole column in the <a href="admin/config/camplus/pr_settings/pr_approve_settings"> Approval Workflow</a> for that cancelled role(s)
+</strong>'),
     '#weight'=>-10,'#prefix' => '<div class="messages warning">',
     '#suffix' => '</div>');
 
   if(!$count) {
-  	$form['empty_text'] = array('#markup' => t('没有可用的角色！请为相关角色'.l('添加权限','admin/people/permissions').'“Camplus Purchase Request approvable”'));
+  	$form['empty_text'] = array('#markup' => t('There is no role invloved in the Approval Process, please add roles with "Approval for Purchase Request" Permission'));
   	return $form;
   }
 	// Add the buttons.
@@ -378,6 +379,7 @@ function theme_camplus_pr_approve_settings_form($variables) {
 
   $camplus_pr_approvable_role_weight = variable_get('camplus_pr_approvable_role_weight','');
   $camplus_pr_approvable_role_involved = variable_get('camplus_pr_approvable_role_involved','');
+  $order = array();
   foreach ($roles as $rid => $role_name) {
     if (in_array($role_name, array('administrator'))) continue;
     if(!isset($camplus_pr_approvable_role_involved[$role_name])) continue;
