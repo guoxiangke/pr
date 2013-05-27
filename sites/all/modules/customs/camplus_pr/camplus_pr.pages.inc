@@ -117,8 +117,7 @@ function theme_camplus_pr_roles_weight_settings_form($variables) {
   $header = array(t('Role'), t('Weight for approvable role'));
   $output = theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('id' => 'approvable_role')));
   $output .= drupal_render_children($form);
-  $warning = '<div class="messages warning">'.t('Note: The minimum weight MUST be assigned to Department specific role, e.g. set 0 for Department Head role
-Note: The minimum weight MUST be assigned to Department specific role, e.g. set 1 for Department Head role
+  $warning = '<div class="messages warning">'.t('Note: The minimum weight MUST be assigned to Department specific role, e.g. set 1 for Department Head role
 .').'</div>';
   return $warning . $output;
 }
@@ -218,7 +217,7 @@ function theme_camplus_pr_range_settings_form($variables) {
   $output .= drupal_render_children($form);
 
 
-  $warning = '<div class="messages warning">'.t('Enter the Price Rangs(s) in respect to different Approval Hierarchy<br/>Note: The following settings are critical, please make sure you know what your are doing!').'</div>';
+  $warning = '<div class="messages warning">'.t('Enter the Price Range(s) in respect to different Approval Hierarchy<br/>Note: The following settings are critical, please make sure you know what your are doing!').'</div>';
   return $warning.$output;
 }
 
