@@ -22,7 +22,7 @@ function camplus_pr_roles_involved_settings_form($form, &$form_state) {
       );
     $count++;
 	}
-  $form['warning_info'] = array('#markup' => t('Note: The following settings are critical, please make sure you know what your are doing! <br> If you need to remove any role invloved in the Approval Process, please <strong> first uncheck the whole column in the <a href="admin/config/camplus/pr_settings/pr_approve_settings"> Approval Workflow</a> for that cancelled role(s)
+  $form['warning_info'] = array('#markup' => t('Note: The following settings are critical, please make sure you know what your are doing! <br> If you need to remove any role invloved in the Approval Process, please <strong> first uncheck the whole column in the '.l('Approval Workflow','admin/config/camplus/pr_settings/pr_approve_settings').' for that cancelled role(s)
 </strong>'),
     '#weight'=>-10,'#prefix' => '<div class="messages warning">',
     '#suffix' => '</div>');
@@ -312,7 +312,7 @@ function camplus_pr_approve_settings_form() {
 
   $count_rows =  variable_get('camplus_pr_settings_range', '5');
   $roles = user_roles(TRUE, 'camplus purchase request approvable');
-
+  $order = array();
   $camplus_pr_approvable_role_weight = variable_get('camplus_pr_approvable_role_weight','');
   $camplus_pr_approvable_role_involved = variable_get('camplus_pr_approvable_role_involved','');
   foreach ($roles as $rid => $role_name) {
