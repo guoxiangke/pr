@@ -11,6 +11,7 @@ function camplus_pr_roles_involved_settings_form($form, &$form_state) {
 		if (in_array($role_name, array('administrator'))) continue;
 
     if($camplus_pr_approvable_role_involved){
+      if(isset($camplus_pr_approvable_role_involved[$role_name]))
       $default_value =  $camplus_pr_approvable_role_involved[$role_name];
     }
     $form['involved'][$role_name] =  array(
