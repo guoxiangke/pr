@@ -479,7 +479,15 @@ function camplus_pr_budget_settings_form() {
   // $form['financial_year'] = array(
   //   '#markup' => $history_link.'&nbsp;&nbsp;'.l((date('Y')-1).' - '.date('Y'),'pr/'.arg(1)).'&nbsp;&nbsp;'.l(date('Y').' - '.(date('Y')+1),'pr/'.arg(1),array ('query' => array ('financial_year' =>date('Y')+1)) ),
   // );
-  
+
+      // Prepare the data
+  $destination = variable_get('file_' . file_default_scheme() . '_path', conf_path() . '/files');
+
+  if (file_exists($destination.'/budget-report.xls') && arg(1)=='budget_report') {
+    $form['budget_report'] = array(
+      '#markup' => l('Download as Excel file', $destination.'/budget-report.xls'),
+    );
+  }
   $form['select_year'] = array(
    '#type' => 'select',
    '#title' => t('Selected'),
@@ -542,17 +550,6 @@ function camplus_pr_budget_settings_form() {
   return $form;
 }
 
-
-
-/**
- * Returns HTML for the role order and new role form.
- *
- * @param $variables
- *   An associative array containing:
- *   - form: A render element representing the form.
- *
- * @ingroup themeable
- */
 function theme_camplus_pr_budget_settings_form($variables) {
   global $debug;
   $form = $variables['form'];
@@ -566,8 +563,25 @@ function theme_camplus_pr_budget_settings_form($variables) {
     t('Budget Balance'),//预算余额
     t('Allowance'),
     t('Maximum Balance'),//max余额
-    t('Mixable Key'),
-    t('通用余额'),
+    t('Used(%)'),
+    t('Budget Pool Key'),
+    t('Budget Pool Balance'),
+    // t('Operations')
+    // array('data' => , 'colspan' => 2)
+    );
+  $headers = array(
+    t('Budget item'),
+    // t('Weight'),
+    t('Description'),
+    t('Budget Amount'),
+    t('Approved Expenses'),//已批支出
+    t('Pending Expenses'),//待批支出
+    t('Budget Balance'),//预算余额
+    t('Allowance'),
+    t('Maximum Balance'),//max余额
+    t('Used(%)'),
+    t('Budget Pool Key'),
+    t('Budget Pool Balance'),
     // t('Operations')
     // array('data' => , 'colspan' => 2)
     );
@@ -577,17 +591,19 @@ function theme_camplus_pr_budget_settings_form($variables) {
     array_push($header,t('Operations'));
   }
   $rows = array();
+  $datas = array();
   foreach (element_children($form['groups']) as $key=>$gid) {
   
     $group = &$form['groups'][$gid];
     $name = $group['#group']['name'];
     $row = array();
+    $data = array();
     $node = node_load($gid);
     {//in_array($gid, array(DRUPAL_ANONYMOUS_RID, DRUPAL_AUTHENTICATED_RID))
      
 
       $row[] = (isset($group['#group']['depth']) && $group['#group']['depth'] > 0 ? theme('indentation', array('size' => $group['#group']['depth'])) : ''). t('@name', array('@name' => $name));
-
+      $data[] = t('@name', array('@name' => $name));
       $group['gid']['#attributes']['class'] = array('group-id');
       $group['parent']['#attributes']['class'] = array('group-parent');
       $group['depth']['#attributes']['class'] = array('group-depth');
@@ -596,16 +612,20 @@ function theme_camplus_pr_budget_settings_form($variables) {
       //$group['weight']['#attributes']['class'] = array('term-weight');
       $form['groups'][$gid]['weight']['#attributes']['class'] = array('group-weight');
       $row[] = drupal_render($form['groups'][$gid]['weight']);
-      
+      // $data[] = '';
       if($node->type == 'budget_item'){
         if(isset($node->field_pr_budget[LANGUAGE_NONE])) {
           $field_pr_budget = $node->field_pr_budget[LANGUAGE_NONE][0]['value'];
           $row[] = $node->body[LANGUAGE_NONE][0]['safe_value'];
           $row[] = $field_pr_budget;
+          $data[] = $node->body[LANGUAGE_NONE][0]['safe_value'];
+          $data[] = $field_pr_budget;
         }else{ 
           $field_pr_budget = 0;
           $row[] = '-';
           $row[] = '-';
+          $data[] = '-';
+          $data[] = '-';
         }
        //已批支出 get all PRs
         $budget_nid = $gid;
@@ -656,41 +676,61 @@ function theme_camplus_pr_budget_settings_form($variables) {
          }
         $row[] = sprintf("%01.2f", $approved);
 
+        $data[] = sprintf("%01.2f", $approved);
         $row[] = sprintf("%01.2f", $pending);
+        $data[] = sprintf("%01.2f", $pending);
         $row_d = $field_pr_budget - $approved - $pending;
         $row[] = sprintf("%01.2f", $field_pr_budget - $approved - $pending);// '预算余额';
+        $data[] = sprintf("%01.2f", $field_pr_budget - $approved - $pending);// '预算余额';
         if(isset($node->field_pr_allowance[LANGUAGE_NONE])) {
           $row_e = $node->field_pr_allowance[LANGUAGE_NONE][0]['value'];
           $row[] = $row_e;
+          $data[] = $row_e;
         }else{
           $row_e = 0;
           $row[] = '-';
+          $data[] = '-';
         }
         $row[] = sprintf("%01.2f", $row_d + $row_e);//max余额
+        $data[] = sprintf("%01.2f", $row_d + $row_e);//max余额
+        if(isset($node->field_pr_budget[LANGUAGE_NONE][0]['value'])) {
+          $row[] = sprintf("%01.2f%%", ($approved + $pending)/$node->field_pr_budget[LANGUAGE_NONE][0]['value']*100);//%
+          $data[] = sprintf("%01.2f%%", ($approved + $pending)/$node->field_pr_budget[LANGUAGE_NONE][0]['value']*100);
+        }else {
+          $row[] = '0.00%';
+          $data[] = '0.00%';
+        }
         if(isset($node->field_mixable_key[LANGUAGE_NONE])) {
           $row[] = $node->field_mixable_key[LANGUAGE_NONE][0]['value'];
+          $data[] = $node->field_mixable_key[LANGUAGE_NONE][0]['value'];
+          $row[] = get_bi_mixable_amount($gid).'*';//'通用余额';
+          $data[] = get_bi_mixable_amount($gid);//'通用余额';
         }else{
           $row[] = '-';
+          $data[] = '-';
+          $row[] = get_bi_mixable_amount($gid);//'通用余额';
+          $data[] = get_bi_mixable_amount($gid);//'通用余额';
         }
-        $row[] = get_bi_mixable_amount($gid);//'通用余额';
+        
         if(user_access('camplus budget settings') || in_array('administrator',$user->roles)) {
           $row[] = l(t('setting'), 'node/' . $gid.'/edit');
         }
       }else {
-        $row[] ='';//Amount
-        $row[] ='';//des
-        $row[] ='';//已批支出
-        $row[] ='';//待批支出
-        $row[] ='';//预算余额
-        $row[] ='';//Allowance
-        $row[] ='';//max余额
-        $row[] ='';//Mixable Key
-        $row[] ='';//通用余额
+        $row[] ='';$data[] = '';//Amount
+        $row[] ='';$data[] = '';//des
+        $row[] ='';$data[] = '';//已批支出
+        $row[] ='';$data[] = '';//待批支出
+        $row[] ='';$data[] = '';//预算余额
+        $row[] ='';$data[] = '';//Allowance
+        $row[] ='';$data[] = '';//max余额
+        $row[] ='';$data[] = '';//%
+        $row[] ='';$data[] = '';//Mixable Key
+        $row[] ='';$data[] = '';//通用余额
         if(user_access('camplus budget settings') || in_array('administrator',$user->roles)) {
           $row[] ='';//l(t('edit'), 'node/' . $gid.'/edit');
         }
       }
-
+      $datas[] = $data;
       $rows[$gid] = array('data' => $row, 'class' => array('draggable','locked'));
     }
   }
@@ -704,5 +744,27 @@ function theme_camplus_pr_budget_settings_form($variables) {
 
   $output = theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('id' => 'groups_tree')));
   $output = drupal_render_children($form).$output;
+
+
+    // Prepare the data
+  $destination = variable_get('file_' . file_default_scheme() . '_path', conf_path() . '/files');
+  
+  // $headers = array('ID', 'Name', 'Type', 'parents', 'Department');
+  dpm($datas);
+  // $data = array();
+  // foreach ($rows as $key => $value) {
+  //   $data[] = $value['data'];
+  // }
+  if (file_exists($destination.'/budget-report.xls')) {
+     drupal_unlink($destination.'/budget-report.xls');
+  }
+  $path = file_create_filename('budget-report.xls', $destination);
+
+  require_once drupal_get_path('module', 'phpexcel').'/phpexcel.inc';
+  if(druedu_phpexcel_export($headers, $datas, $path)){//@see phpexcel_export
+    drupal_set_message(t('The template has been successfully generated. Click '.l('here',$path)).' to download.', 'status');
+  }
+  // drupal_goto('admin/people/advanced_management/department/bi');
+
   return $output;
 }
