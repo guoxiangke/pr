@@ -94,7 +94,7 @@ function camplus_pr_menu() {
     'title' => 'My Budget Report',
     'access arguments' => array('view budget report'),
     'weight' => 5,
-    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'type' => MENU_LOCAL_TASK,
     'page callback' => 'drupal_get_form',
     'page arguments' => array('camplus_pr_budget_settings_form'), 
     'access arguments' => array('create purchase_request content'), 

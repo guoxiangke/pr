@@ -483,7 +483,7 @@ function camplus_pr_budget_settings_form() {
       // Prepare the data
   $destination = variable_get('file_' . file_default_scheme() . '_path', conf_path() . '/files');
 
-  if (file_exists($destination.'/budget-report.xls') ) {//&& arg(1)=='budget_report'
+  if (file_exists($destination.'/budget-report.xls')) {//&& arg(1)=='budget_report'
     $form['budget_report'] = array(
       '#markup' => l('Download as Excel file', $destination.'/budget-report.xls'),
     );
@@ -756,7 +756,7 @@ function theme_camplus_pr_budget_settings_form($variables) {
   //   $data[] = $value['data'];
   // }
   if (file_exists($destination.'/budget-report.xls')) {
-     drupal_unlink($destination.'/budget-report.xls');
+    drupal_unlink($destination.'/budget-report.xls');
   }
   $path = file_create_filename('budget-report.xls', $destination);
 
