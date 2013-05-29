@@ -78,16 +78,18 @@ function camplus_pr_menu() {
   //   'weight' => 7,
   //   'type' => MENU_LOCAL_TASK,
   // );
-  $items['pr'] = array(
-    'title' => 'My Budget Report',
-    'access arguments' => array('view budget report'),
-    'weight' => 5,
-    'menu_name' => 'main-menu',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('camplus_pr_budget_settings_form'), 
-    'access arguments' => array('view my budget report'), 
-    'file' => 'camplus_pr.pages.inc',
-  );
+
+  // $items['pr'] = array(
+  //   'title' => 'My Budget Report',
+  //   'access arguments' => array('view budget report'),
+  //   'weight' => 5,
+  //   'menu_name' => 'main-menu',
+  //   'page callback' => 'drupal_get_form',
+  //   'page arguments' => array('camplus_pr_budget_settings_form'), 
+  //   'access arguments' => array('view my budget report'), 
+  //   'file' => 'camplus_pr.pages.inc',
+  // );
+  
   $items['pr/my_budget_report'] = array(
     'title' => 'My Budget Report',
     'access arguments' => array('view budget report'),
