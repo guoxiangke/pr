@@ -318,8 +318,25 @@ function camplus_pr_form_alter(&$form, &$form_state, $form_id) {
     $camplus_pr_range_settings = variable_get('camplus_pr_range_settings');
     $camplus_pr_file_settings = variable_get('camplus_pr_file_settings');
     $description = '';
+    // dpm($camplus_pr_file_settings);
+    // dpm($camplus_pr_range_settings);
     foreach ($camplus_pr_range_settings as $key => $value) {
-      $description .= $value['begin'] .'-'. $value['end']  . '-' . $camplus_pr_file_settings["pr_quo_file_no_$key"].'<br/>';
+      if(!$camplus_pr_file_settings["pr_quo_file_no_$key"]) {
+        $str1 = 'no';
+      }else {
+        $str1 = '<strong>'. $camplus_pr_file_settings["pr_quo_file_no_$key"].'</strong>';
+      }
+      if(!$camplus_pr_file_settings["pr_quofile_require_$key"]) {
+        $str2= '';
+      }else {
+        $str2 = 'Quotation file required;';
+      }
+      if(!$camplus_pr_file_settings["pr_ref_file_require_$key"]) {
+        $str3= '';
+      }else {
+        $str3 = 'reference supplier Quotation file required';
+      }
+      $description .= 'HK$'.$value['begin'] .'-'. $value['end']  . ': ' .$str1.' reference supplier required;'.$str2 .$str3 .'<br/>';
     }
 
     $form['fgm_node_purchase_request_form_group_referenced']['fields']['#description'] = $description;

@@ -173,7 +173,6 @@ function camplus_pr_range_settings_form() {
 function camplus_pr_range_settings_form_submit($form, &$form_state) {
   $pattern = '/\d+/';
   $return = array();
-
   foreach ($form_state['values'] as $key => $value) {
     $subject = $key;
     if(strstr($key, 'pr_range_begin')) {
@@ -191,9 +190,6 @@ function camplus_pr_range_settings_form_submit($form, &$form_state) {
   }
   variable_set('camplus_pr_file_settings', $file_settings);
   variable_set('camplus_pr_range_settings', $range_settings);
-  foreach ($variable as $key => $value) {
-    $return[$key] = $value['begin']. ' - '. $value['end']; 
-  }
 }
 
 function theme_camplus_pr_range_settings_form($variables) {
