@@ -315,6 +315,15 @@ function camplus_pr_form_alter(&$form, &$form_state, $form_id) {
     if(!in_array(variable_get('camplus_pr_help_role', '6'), array_keys($user->roles))) {
       $form['field_pr_author']['#access'] = FALSE;
     }
+    $camplus_pr_range_settings = variable_get('camplus_pr_range_settings');
+    $camplus_pr_file_settings = variable_get('camplus_pr_file_settings');
+    $description = '';
+    foreach ($camplus_pr_range_settings as $key => $value) {
+      $description .= $value['begin'] .'-'. $value['end']  . '-' . $camplus_pr_file_settings["pr_quo_file_no_$key"].'<br/>';
+    }
+
+    $form['fgm_node_purchase_request_form_group_referenced']['fields']['#description'] = $description;
+
   }
   //if not open mixable key, == not Enable Budget Pool, hide the field
   //@see node_view & purchase_request_node_form_validate()
