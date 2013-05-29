@@ -467,7 +467,7 @@ function camplus_pr_budget_settings_form() {
   );
   $years_count = variable_get('camplus_pr_show_budget_history', '1');//this year & next year
   $history_link = '';
-  $base_path = url(NULL, array('absolute' => TRUE)) . (variable_get('clean_url', 0) ? '' : '?q=');
+  $base_path = url(NULL, array('absolute' => TRUE)) . ('?q=');
   $base_path .= 'pr/'.arg(1);
   while ($years_count) {
     $history_link .= l((date('Y')-$years_count-1).' - '.(date('Y')-$years_count),'pr/'.arg(1),array ('query' => array ('financial_year' =>date('Y')-$years_count)) ).'&nbsp;&nbsp;';
@@ -483,11 +483,12 @@ function camplus_pr_budget_settings_form() {
       // Prepare the data
   $destination = variable_get('file_' . file_default_scheme() . '_path', conf_path() . '/files');
 
-  if (file_exists($destination.'/budget-report.xls')) {//&& arg(1)=='budget_report'
+  if (file_exists($destination.'/budget-report.xls')) {//&& arg(1)!='my_budget_report'
     $form['budget_report'] = array(
       '#markup' => l('Download as Excel file', $destination.'/budget-report.xls'),
     );
   }
+
   $form['select_year'] = array(
    '#type' => 'select',
    '#title' => t('Selected'),
@@ -564,11 +565,15 @@ function theme_camplus_pr_budget_settings_form($variables) {
     t('Allowance'),
     t('Maximum Balance'),//max余额
     t('Used(%)'),
-    t('Budget Pool Key'),
-    t('Budget Pool Balance'),
+    // t('Budget Pool Key'),
+    // t('Budget Pool Balance'),
     // t('Operations')
     // array('data' => , 'colspan' => 2)
     );
+  if(arg(1)!='my_budget_report') {
+     array_push($header,t('Budget Pool Key'));
+     array_push($header,t('Budget Pool Balance'));
+  }
   $headers = array(
     t('Budget item'),
     // t('Weight'),
@@ -700,17 +705,20 @@ function theme_camplus_pr_budget_settings_form($variables) {
           $row[] = '0.00%';
           $data[] = '0.00%';
         }
-        if(isset($node->field_mixable_key[LANGUAGE_NONE])) {
-          $row[] = $node->field_mixable_key[LANGUAGE_NONE][0]['value'];
-          $data[] = $node->field_mixable_key[LANGUAGE_NONE][0]['value'];
-          $row[] = get_bi_mixable_amount($gid).'*';//'通用余额';
-          $data[] = get_bi_mixable_amount($gid);//'通用余额';
-        }else{
-          $row[] = '-';
-          $data[] = '-';
-          $row[] = get_bi_mixable_amount($gid);//'通用余额';
-          $data[] = get_bi_mixable_amount($gid);//'通用余额';
+        if(arg(1)!='my_budget_report') {
+          if(isset($node->field_mixable_key[LANGUAGE_NONE])) {
+            $row[] = $node->field_mixable_key[LANGUAGE_NONE][0]['value'];
+            $data[] = $node->field_mixable_key[LANGUAGE_NONE][0]['value'];
+            $row[] = get_bi_mixable_amount($gid).'*';//'通用余额';
+            $data[] = get_bi_mixable_amount($gid);//'通用余额';
+          }else{
+            $row[] = '-';
+            $data[] = '-';
+            $row[] = get_bi_mixable_amount($gid);//'通用余额';
+            $data[] = get_bi_mixable_amount($gid);//'通用余额';
+          }
         }
+
         
         if(user_access('camplus budget settings') || in_array('administrator',$user->roles)) {
           $row[] = l(t('setting'), 'node/' . $gid.'/edit');
@@ -724,8 +732,10 @@ function theme_camplus_pr_budget_settings_form($variables) {
         $row[] ='';$data[] = '';//Allowance
         $row[] ='';$data[] = '';//max余额
         $row[] ='';$data[] = '';//%
-        $row[] ='';$data[] = '';//Mixable Key
-        $row[] ='';$data[] = '';//通用余额
+        if(arg(1)!='my_budget_report') {
+          $row[] ='';$data[] = '';//Mixable Key
+          $row[] ='';$data[] = '';//通用余额
+        }
         if(user_access('camplus budget settings') || in_array('administrator',$user->roles)) {
           $row[] ='';//l(t('edit'), 'node/' . $gid.'/edit');
         }
@@ -750,7 +760,7 @@ function theme_camplus_pr_budget_settings_form($variables) {
   $destination = variable_get('file_' . file_default_scheme() . '_path', conf_path() . '/files');
   
   // $headers = array('ID', 'Name', 'Type', 'parents', 'Department');
-  dpm($datas);
+
   // $data = array();
   // foreach ($rows as $key => $value) {
   //   $data[] = $value['data'];
@@ -761,10 +771,9 @@ function theme_camplus_pr_budget_settings_form($variables) {
   $path = file_create_filename('budget-report.xls', $destination);
 
   require_once drupal_get_path('module', 'phpexcel').'/phpexcel.inc';
-  if(druedu_phpexcel_export($headers, $datas, $path)){//@see phpexcel_export
-    drupal_set_message(t('The template has been successfully generated. Click '.l('here',$path)).' to download.', 'status');
+  if(druedu_phpexcel_export($headers, $datas, $path)){ //@see phpexcel_export
+    drupal_set_message(t('Click '.l('here',$path)).' to download.', 'status');
   }
-  // drupal_goto('admin/people/advanced_management/department/bi');
 
   return $output;
 }
