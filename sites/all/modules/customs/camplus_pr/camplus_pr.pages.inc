@@ -86,7 +86,6 @@ function camplus_pr_roles_weight_settings_form($form, &$form_state) {
     '#value' => t('Save'),
     '#weight' => 5,
   );
-  dpm($form);
   return  $form;
 }
 
@@ -329,7 +328,6 @@ function camplus_pr_approve_settings_form() {
   ksort($order,SORT_NUMERIC);
 
   $workflow_settings = variable_get('camplus_pr_workflow_settings', '');
-  dpm($workflow_settings);
   for($i = 0; $i < $count_rows; $i++) {
     foreach ($order as $key => $role) {
       $default_value = 0;
@@ -350,7 +348,6 @@ function camplus_pr_approve_settings_form() {
     '#value' => t('Save'),
     '#weight' => 5,
   );
-  dpm($form);
   return  $form;
 }
 

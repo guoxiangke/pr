@@ -159,7 +159,7 @@ function camplus_pr_undraft($node) {
   // }
   if(isset($node->field_pr_author[LANGUAGE_NONE][0]['target_id']) && is_numeric($node->field_pr_author[LANGUAGE_NONE][0]['target_id'])) {
     $temp  = $node->field_pr_author[LANGUAGE_NONE][0]['target_id'];
-    $tempuid = $node->uid;
+    // $tempuid = $node->uid;
     $node->uid = $temp;
     // $node->field_pr_author[LANGUAGE_NONE][0]['target_id'] = $tempuid;
   }
@@ -312,7 +312,7 @@ function camplus_pr_form_alter(&$form, &$form_state, $form_id) {
 
     //http://pm.intechnigence.com/node/110
     global $user;
-    if(!in_array(variable_get('camplus_pr_help_role', '6'), array_keys($user->roles))) {
+    if(!in_array(variable_get('camplus_pr_help_role', '6'), array_keys($user->roles)) || !variable_get('camplus_pr_help_staff_enable', '0')) {
       $form['field_pr_author']['#access'] = FALSE;
     }
     $camplus_pr_range_settings = variable_get('camplus_pr_range_settings');
@@ -440,9 +440,7 @@ function purchase_request_node_form_validate($form, &$form_state) {
         foreach ($fields as $field_name => $value) {
           if($field_name == 'field_pr_ref_quotation_file') {
             if(!$value[LANGUAGE_NONE][0]['fid']) {
-
-              dpm( $field_name.t('must have pr_ref_file_require'));
-               form_set_error('files[field_pr_quotation_file_und_0]', t('must have pr_ref_file_require'));
+               form_set_error('files[field_pr_quotation_file_und_0]', t('Reference Supplier Quotation file required!'));
             };
           }
         }
@@ -455,7 +453,7 @@ function purchase_request_node_form_validate($form, &$form_state) {
         if($field_name != 'field_pr_ref_quotation_file') {
           if(empty($value[LANGUAGE_NONE]['value'])){
             // dpm( $field_name.t('must have value'));
-             form_set_error('', $field_name.t(' Must have value'));
+             form_set_error('', t('Reference Supplier some fields Must have value!'));//$field_name.
           };
         }else {
 
@@ -472,8 +470,11 @@ function purchase_request_node_form_validate($form, &$form_state) {
     $form_state['input']['field_pr_staff'][LANGUAGE_NONE] = $user->uid;
     $form_state['values']['field_pr_staff'][LANGUAGE_NONE][0]['target_id'] = $user->uid;
     //set field_pr_author == node->uid
-    if(is_numeric($form_state['input']['field_pr_author'][LANGUAGE_NONE])){
+    if(isset($form_state['input']['field_pr_author']) && is_numeric($form_state['input']['field_pr_author'][LANGUAGE_NONE])){
       $form_state['values']['uid'][LANGUAGE_NONE] = $form_state['input']['field_pr_author'][LANGUAGE_NONE];
+    }
+    if(form_get_errors()) {
+      return;
     }
     drupal_set_message(t('This Application has not yet been submitted for Apporval Process.
  <br>Reminded that, due to submission(s) by others, the Applicable Balance may change when you "Submit".'), 'warning', FALSE);

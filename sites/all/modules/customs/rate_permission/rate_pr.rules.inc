@@ -163,11 +163,11 @@ function rate_pr_action_email($node) {
     watchdog('value==2', 'message', array(), WATCHDOG_NOTICE, 'link');
  }
  //begin
-  // All system mails need to specify the module and template key (mirrored from
-  // hook_mail()) that the message they want to send comes from.
+  
   $module = 'rate_pr';
   $key = 'lock_email';
 
+  // Specify 'to' and 'from' addresses.
   // Specify 'to' and 'from' addresses.
   $to =  variable_get('camplus_pr_email_notification_addr', 'admin@admin.com');
   $from = variable_get('site_mail', 'admin@example.com');
@@ -175,9 +175,9 @@ function rate_pr_action_email($node) {
   // "params" loads in additional context for email content completion in
   // hook_mail(). In this case, we want to pass in the values the user entered
   // into the form, which include the message body in $form_values['message'].
-  // $params = $form_values;//????
   $params = array(
     'subject' => $node->title,
+    'message' => "<p>Hello World</p>",
     'body' => "<p>Hello World</p>",
   );
   // The language of the e-mail. This will one of three values:
@@ -204,15 +204,10 @@ function rate_pr_action_email($node) {
   // while sending.
   $result = drupal_mail($module, $key, $to, $language, $params, $from, $send);
   if ($result['result'] == TRUE) {
-    watchdog('rate_pr', 'Your eamil has been sent.', array(), WATCHDOG_NOTICE, 'link');
-    drupal_set_message(t('Your eamil has been sent.'));
+    drupal_set_message(t('Your lock eamil has been sent.'));
   }
   else {
-    watchdog('rate_pr', 'There was a problem sending your eamil and it was not sent.', array(), WATCHDOG_NOTICE, 'link');
-    drupal_set_message(t('There was a problem sending your eamil and it was not sent.'), 'error');
+    drupal_set_message(t('There was a problem sending your message and it was not sent.'), 'error');
   }
 
-  //end
-  watchdog('emailed', 'message', array(), WATCHDOG_NOTICE, 'link');
-  return;
 }
