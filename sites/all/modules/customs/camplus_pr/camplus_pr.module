@@ -308,6 +308,7 @@ function camplus_pr_form_alter(&$form, &$form_state, $form_id) {
       '#suffix' => '</div>',
     );
     $form['#validate'][] = 'purchase_request_node_form_validate';
+    $form['#submit'][] = 'purchase_request_node_form_submit_warning';
     $form['#attached']['js'][] = drupal_get_path('module', 'camplus_pr') . '/camplus_pr.js';
 
     //http://pm.intechnigence.com/node/110
@@ -476,12 +477,14 @@ function purchase_request_node_form_validate($form, &$form_state) {
     if(form_get_errors()) {
       return;
     }
-    drupal_set_message(t('This Application has not yet been submitted for Apporval Process.
- <br>Reminded that, due to submission(s) by others, the Applicable Balance may change when you "Submit".'), 'warning', FALSE);
+ //    drupal_set_message(t('This Application has not yet been submitted for Apporval Process.
+ // <br>Reminded that, due to submission(s) by others, the Applicable Balance may change when you "Submit".'), 'warning', FALSE);
     // form_set_error('[field_budget_items_amount][und][value]', t('test!!!'));
 }
 
-
+function purchase_request_node_form_submit_warning($form, &$form_state) {
+  drupal_set_message(t('This Application has not yet been submitted for Apporval Process. <br>Reminded that, due to submission(s) by others, the Applicable Balance may change when you "Submit".'), 'warning', FALSE);
+}
 function camplus_pr_field_widget_form_alter(&$element, &$form_state, $context) {
   //field_budget_items
   //必须是当前年份的预算项目
@@ -569,7 +572,6 @@ function camplus_pr_admin_paths_alter(&$paths) {
   $paths['node/add/purchase-request'] = FALSE;
   $paths['node/add/budget-item'] = FALSE;  
   $paths['node/add/school-department'] = FALSE;
-  
   $paths['node/%node/edit'] = FALSE;
 }
 /**
