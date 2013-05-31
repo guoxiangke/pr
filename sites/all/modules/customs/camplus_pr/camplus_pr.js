@@ -29,7 +29,7 @@
 						total += parseFloat($(this).val());
 					});
 					total += parseFloat($('#edit-field-payment-from-students input').val());
-					$('.field-name-field-chosen-price input').val(total);
+					$('.multiple-field-chosen-price input').val(total);
 				});
 			}
 
@@ -52,7 +52,7 @@
 				total += parseFloat($(this).val());
 			});
 			total += parseFloat($('#edit-field-payment-from-students input').val());
-			$('.field-name-field-chosen-price input').val(total);
+			$('.multiple-field-chosen-price input').val(total);
 		});
 	}
 	countTotalBI();
@@ -63,7 +63,7 @@
 				total += parseFloat($(this).val()) || 0;
 			});
 			total += parseFloat($('#edit-field-payment-from-students input').val());
-			$('.field-name-field-chosen-price input').val(total);
+			$('.multiple-field-chosen-price input').val(total);
 		});
 	}
 
