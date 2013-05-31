@@ -74,4 +74,9 @@
 		// e.preventDefault();
 		countTotalBInoblur();
 	});
+
+	$('#field-multiple-bi-reason-add-more-wrapper').hide();
+	$('#edit-fgm-node-purchase-request-form-group-referenced-add-more').click(function(){
+		$('#field-multiple-bi-reason-add-more-wrapper').slideDown();
+	});
 });
