@@ -339,8 +339,13 @@ function camplus_pr_form_alter(&$form, &$form_state, $form_id) {
       }
       $description .= 'HK$'.$value['begin'] .'-'. $value['end']  . ': ' .$str1. ' ' .$str2 . ' ' .$str3 .'<br/>';
     }
-
-    $form['fgm_node_purchase_request_form_group_referenced']['fields']['#description'] = $description;
+    $form['fgm_node_purchase_request_form_group_ref_supplier']['fields']['#description'] = $description;
+    $form['field_pr_status']['#access'] = FALSE;
+    $form['field_pr_staff']['#access'] = FALSE;
+    $form['field_voucher_no']['#access'] = FALSE;
+    $form['og_group_ref']['#access'] = FALSE;
+    
+dpm($form);
 
   }
   //if not open mixable key, == not Enable Budget Pool, hide the field
@@ -351,9 +356,8 @@ function camplus_pr_form_alter(&$form, &$form_state, $form_id) {
       unset($form['field_mixable_key']);
     }
   }
-
-
 }
+
 function purchase_request_node_form_validate($form, &$form_state) {
   // Budget Items field && Budget Items amount field validate
   $department = array();
@@ -394,7 +398,7 @@ function purchase_request_node_form_validate($form, &$form_state) {
         form_set_error('[field_budget_items_amount][und][value]', t('You cannot apply amount larger than the Applicable Budget Balance!'));//您只能使用最大余额'.$bis_info_all['f'].' 不能通用 not Enable Budget Pool
       }  
 
-      // dpm($total);    
+
       if($total > $bis_info_all['g']) {
         form_set_error('[field_budget_items_amount][und][value]', t('Your Requested Amount exceeds the Maximum Budget in your Department, your application CANNOT be submitted!'));
       }
@@ -409,7 +413,7 @@ function purchase_request_node_form_validate($form, &$form_state) {
      // form_set_error('[field_budget_items_amount][und][value]', t('test!!!'));
   }
   //您不能跨部门预算
-  if(count(array_unique($department))!=1){
+  if(count(array_unique($department))!=1) {
      form_set_error('[field_budget_items_amount][und][value]', t('您不能跨部门预算'));
   }
   // Budget Items field && Budget Items amount field validate end
@@ -436,7 +440,18 @@ function purchase_request_node_form_validate($form, &$form_state) {
     if($pr_quofile_require && !$form_state['input']['field_pr_quotation_file'][LANGUAGE_NONE][0]['fid']) {
       form_set_error('files[field_pr_quotation_file_und_0]', t('must have quotation_file'));
     }
-    dpm($form_state['input']);
+    
+    //['field_pr_quotation_file'][LANGUAGE_NONE][0]['fid']
+    $chosen_price = $total + $form_state['input']['field_payment_from_students'][LANGUAGE_NONE][0]['value'];
+
+    if(!strlen($form_state['input']['field_lower_price_remark'][LANGUAGE_NONE][0]['value']))
+    foreach ($form_state['input']['fgm_node_purchase_request_form_group_ref_supplier']['fields']['items'] as $key => $referenced) {
+      if($chosen_price > $referenced['field_referenced_price'][LANGUAGE_NONE]['value']) {
+        form_set_error('fgm_node_purchase_request_form_group_chosen[fields][items][0][field_chosen_price][und][value]', t('Your quoted reference price is smaller than the price from chosen supplier, you must specify reason.
+'));//$field_name.
+      }
+    }
+
     if($pr_ref_file_require) {
       foreach ($form_state['input']['fgm_node_purchase_request_form_group_ref_supplier']['fields']['items'] as $key => $fields) {
         foreach ($fields as $field_name => $value) {
@@ -465,8 +480,9 @@ function purchase_request_node_form_validate($form, &$form_state) {
     if($pr_quo_file_no != 0 && $form_state['values']['field_pr_sole_supplier'][LANGUAGE_NONE][0]['value'] != 1 && $pr_quo_file_no != count($form_state['input']['fgm_node_purchase_request_form_group_ref_supplier']['fields']['items']) ) {
       form_set_error('[field_budget_items_amount][und][value]', t('must have '.$pr_quo_file_no .'reference file'));
     }
-    //['field_pr_quotation_file'][LANGUAGE_NONE][0]['fid']
 
+          
+        
     // set field_pr_staff  == current user;
     global $user;
     $form_state['input']['field_pr_staff'][LANGUAGE_NONE] = $user->uid;
