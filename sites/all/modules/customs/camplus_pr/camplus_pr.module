@@ -436,8 +436,9 @@ function purchase_request_node_form_validate($form, &$form_state) {
     if($pr_quofile_require && !$form_state['input']['field_pr_quotation_file'][LANGUAGE_NONE][0]['fid']) {
       form_set_error('files[field_pr_quotation_file_und_0]', t('must have quotation_file'));
     }
+    dpm($form_state['input']);
     if($pr_ref_file_require) {
-      foreach ($form_state['input']['fgm_node_purchase_request_form_group_referenced']['fields']['items'] as $key => $fields) {
+      foreach ($form_state['input']['fgm_node_purchase_request_form_group_ref_supplier']['fields']['items'] as $key => $fields) {
         foreach ($fields as $field_name => $value) {
           if($field_name == 'field_pr_ref_quotation_file') {
             if(!$value[LANGUAGE_NONE][0]['fid']) {
@@ -449,7 +450,7 @@ function purchase_request_node_form_validate($form, &$form_state) {
     }
 
     if($pr_quo_file_no != 0 && $form_state['values']['field_pr_sole_supplier'][LANGUAGE_NONE][0]['value'] != 1) 
-    foreach ($form_state['input']['fgm_node_purchase_request_form_group_referenced']['fields']['items'] as $key => $fields) {
+    foreach ($form_state['input']['fgm_node_purchase_request_form_group_ref_supplier']['fields']['items'] as $key => $fields) {
       foreach ($fields as $field_name => $value) {
         if($field_name != 'field_pr_ref_quotation_file') {
           if(empty($value[LANGUAGE_NONE]['value'])){
@@ -461,7 +462,7 @@ function purchase_request_node_form_validate($form, &$form_state) {
         }
       }
     }
-    if($pr_quo_file_no != 0 && $form_state['values']['field_pr_sole_supplier'][LANGUAGE_NONE][0]['value'] != 1 && $pr_quo_file_no != count($form_state['input']['fgm_node_purchase_request_form_group_referenced']['fields']['items']) ) {
+    if($pr_quo_file_no != 0 && $form_state['values']['field_pr_sole_supplier'][LANGUAGE_NONE][0]['value'] != 1 && $pr_quo_file_no != count($form_state['input']['fgm_node_purchase_request_form_group_ref_supplier']['fields']['items']) ) {
       form_set_error('[field_budget_items_amount][und][value]', t('must have '.$pr_quo_file_no .'reference file'));
     }
     //['field_pr_quotation_file'][LANGUAGE_NONE][0]['fid']

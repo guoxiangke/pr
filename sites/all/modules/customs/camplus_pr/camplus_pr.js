@@ -8,9 +8,9 @@
  			$('#edit-field-pr-sole-supplier-und').change(function() {
 			     if(this.checked) {
 			         // do something when checked
-			        $('#fgm_node_purchase_request_form_group_referenced-add-more-wrapper').slideUp();
+			        $('#fgm_node_purchase_request_form_group_ref_supplier-add-more-wrapper').slideUp();
 			     }else {
-			     	$('#fgm_node_purchase_request_form_group_referenced-add-more-wrapper').slideDown();
+			     	$('#fgm_node_purchase_request_form_group_ref_supplier-add-more-wrapper').slideDown();
 			     }
 			 });
 	Drupal.behaviors.pr = {
@@ -20,7 +20,7 @@
 			  	}
 			});
 
-			$(".field-name-field-chosen-price input").attr("disabled","disabled");
+			$(".form-item-fgm-node-purchase-request-form-group-chosen-fields-items-0-field-chosen-price-und-value input").attr("disabled","disabled");
 			countTotalBI();
 			function countTotalBInoblur() {
 				$('#fgm-node-purchase-request-form-group-budgets-values input').each(function(){
@@ -41,14 +41,14 @@
 				countTotalBInoblur();
 			});
 			
-			$('#edit-fgm-node-purchase-request-form-group-referenced-add-more').click(function(){
+			$('#edit-fgm-node-purchase-request-form-group-ref-supplier-add-more').click(function(){
 				$('#field-multiple-bi-reason-add-more-wrapper').slideDown();
 			});
 				
 		}
 	}
 	
-	$(".field-name-field-chosen-price input").attr("disabled","disabled");
+	$(".form-item-fgm-node-purchase-request-form-group-chosen-fields-items-0-field-chosen-price-und-value input").attr("disabled","disabled");
 	function countTotalBI() {
 		$('#fgm-node-purchase-request-form-group-budgets-values input').blur(function(){
 			total = 0;
