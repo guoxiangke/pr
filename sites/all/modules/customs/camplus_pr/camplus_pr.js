@@ -89,7 +89,7 @@
 	});
 	// field_multiple_bi_reason
 	// console.log($('#edit-fgm-node-purchase-request-form-group-budgets-fields-items-1-field-budget-items-amount-und-value').val());
-	if(!$('#edit-fgm-node-purchase-request-form-group-budgets-fields-items-1-field-budget-items-amount-und-value').val()) {
+	if($('#edit-fgm-node-purchase-request-form-group-budgets-fields-items-1-field-budget-items-amount-und-value').length == 0) {
 		$('#field-multiple-bi-reason-add-more-wrapper').hide();
 	}
 });
