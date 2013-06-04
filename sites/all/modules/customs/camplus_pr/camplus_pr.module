@@ -468,7 +468,7 @@ function purchase_request_node_form_validate($form, &$form_state) {
         if($field_name != 'field_pr_ref_quotation_file') {
           if(empty($value[LANGUAGE_NONE]['value'])){
             // dpm( $field_name.t('must have value'));
-             form_set_error('', t('Reference Supplier some fields Must have value!'));//$field_name.
+             form_set_error('', t('You need to provide reference supplier(s) information as well'));//$field_name.
           };
         }else {
 
