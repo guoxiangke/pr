@@ -493,9 +493,9 @@ function purchase_request_node_form_validate($form, &$form_state) {
     $field_financial_year = camplus_pr_get_current_financial_year();
     $financial_year = substr($field_financial_year,0,4)-1;
     $financial_year_end = substr($field_financial_year,2,2);
-    $form_state['input']['field_pr_reference_no'][LANGUAGE_NONE][0]['value'] = variable_get('camplus_pr_no_pattern_prefix', 'PR').'-'.$financial_year .'/'. $financial_year_end ."-0000-";//.$row->nid
+    $form_state['input']['field_pr_reference'][LANGUAGE_NONE][0]['value'] = variable_get('camplus_pr_no_pattern_prefix', 'PR').'-'.$financial_year .'/'. $financial_year_end ."-0000-";//.$row->nid
           
-          dpm($form_state['input']['field_pr_reference_no'][LANGUAGE_NONE][0]['value']);
+          dpm($form_state['input']['field_pr_reference'][LANGUAGE_NONE][0]['value']);
 
     if(form_get_errors()) {
       return;
