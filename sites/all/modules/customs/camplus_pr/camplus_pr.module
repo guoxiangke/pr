@@ -319,8 +319,8 @@ function camplus_pr_form_alter(&$form, &$form_state, $form_id) {
     $camplus_pr_range_settings = variable_get('camplus_pr_range_settings');
     $camplus_pr_file_settings = variable_get('camplus_pr_file_settings');
     $description = '';
-    // dpm($camplus_pr_file_settings);
-    // dpm($camplus_pr_range_settings);
+    dpm($camplus_pr_file_settings);
+    dpm($camplus_pr_range_settings);
     foreach ($camplus_pr_range_settings as $key => $value) {
       if(!$camplus_pr_file_settings["pr_quo_file_no_$key"]) {
         $str1 = t('no reference supplier required;');
@@ -442,8 +442,8 @@ function purchase_request_node_form_validate($form, &$form_state) {
     
     //['field_pr_quotation_file'][LANGUAGE_NONE][0]['fid']
     $chosen_price = $total + $form_state['input']['field_payment_from_students'][LANGUAGE_NONE][0]['value'];
-
-    if(!strlen($form_state['input']['field_lower_price_remark'][LANGUAGE_NONE][0]['value']))
+dpm($camplus_pr_file_settings["pr_quo_file_no_$approve_rang"]);
+    if(!strlen($form_state['input']['field_lower_price_remark'][LANGUAGE_NONE][0]['value']) && $camplus_pr_file_settings["pr_quo_file_no_$approve_rang"] > 0 )
     foreach ($form_state['input']['fgm_node_purchase_request_form_group_ref_supplier']['fields']['items'] as $key => $referenced) {
       if($chosen_price > $referenced['field_referenced_price'][LANGUAGE_NONE]['value']) {
         form_set_error('fgm_node_purchase_request_form_group_chosen[fields][items][0][field_chosen_price][und][value]', t('Your quoted reference price is smaller than the price from chosen supplier, you must specify reason.
