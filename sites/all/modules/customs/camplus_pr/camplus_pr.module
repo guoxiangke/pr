@@ -365,15 +365,15 @@ function purchase_request_node_form_validate($form, &$form_state) {
   foreach ($form_state['input']['fgm_node_purchase_request_form_group_budgets']['fields'] as $key1 => $variable) {
     foreach ($variable as $key => $value) {
       if($value['field_budget_items']['und']=='_none' && $value['field_budget_items_amount']['und']['value']) {
-        form_set_error('og_group_ref[und]['.$key1.'][default]', t('Budget Items field 必填，因另一个有值！'));
+        form_set_error('og_group_ref[und]['.$key1.'][default]', t('Please select which Budget Item you request'));
       }
       if(!$value['field_budget_items_amount']['und']['value'] && $value['field_budget_items']['und']!='_none') {
-        form_set_error('og_group_ref[und]['.$key1.'][default]', t('Budget Items amount必填，因另一个有值！'));
+        form_set_error('og_group_ref[und]['.$key1.'][default]', t('Please fill the Budget Amount you request'));
       }
       $total += $value['field_budget_items_amount']['und']['value'];
       $field_budget_items[$key] = $value['field_budget_items']['und'];
       if($field_budget_items[$key] == '_none') {
-        form_set_error('[field_budget_items_amount][und][value]', t('预算项目请选择一个值'));
+        form_set_error('[field_budget_items_amount][und][value]', t('Please select which Budget Item you request'));
         break;
       }
 

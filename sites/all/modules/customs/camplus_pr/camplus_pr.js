@@ -26,7 +26,7 @@
 				$('#fgm-node-purchase-request-form-group-budgets-values input').each(function(){
 					total = 0;
 					$('#fgm-node-purchase-request-form-group-budgets-values input').each(function(){
-						total += parseFloat($(this).val());
+						total += parseFloat($(this).val()) || 0;
 					});
 					total += parseFloat($('#edit-field-payment-from-students input').val());
 					$('.multiple-field-chosen-price input').val(total);
@@ -62,7 +62,7 @@
 		$('#fgm-node-purchase-request-form-group-budgets-values input').blur(function(){
 			total = 0;
 			$('#fgm-node-purchase-request-form-group-budgets-values input').each(function(){
-				total += parseFloat($(this).val());
+				total += parseFloat($(this).val()) || 0;
 			});
 			total += parseFloat($('#edit-field-payment-from-students input').val());
 			$('.multiple-field-chosen-price input').val(total);
