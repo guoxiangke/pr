@@ -306,6 +306,7 @@ function camplus_pr_settings_form() {
   $form['warning_info'] = array('#markup' => t('Note: The following settings are critical, please make sure you know what your are doing!'),
   '#weight'=>-10,'#prefix' => '<div class="messages warning">',
   '#suffix' => '</div>');
+  drupal_add_js(drupal_get_path('module', 'camplus_pr').'/camplus_pr_admin.js');
   return system_settings_form($form);
 }
 
