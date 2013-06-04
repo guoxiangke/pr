@@ -344,7 +344,7 @@ function camplus_pr_form_alter(&$form, &$form_state, $form_id) {
     $form['field_pr_staff']['#access'] = FALSE;
     $form['field_voucher_no']['#access'] = FALSE;
     $form['og_group_ref']['#access'] = FALSE;
-    
+    dpm($form);
   }
   //if not open mixable key, == not Enable Budget Pool, hide the field
   //@see node_view & purchase_request_node_form_validate()
@@ -479,8 +479,7 @@ function purchase_request_node_form_validate($form, &$form_state) {
       form_set_error('[field_budget_items_amount][und][value]', t('must have '.$pr_quo_file_no .'reference file'));
     }
 
-          
-        
+
     // set field_pr_staff  == current user;
     global $user;
     $form_state['input']['field_pr_staff'][LANGUAGE_NONE] = $user->uid;
@@ -489,6 +488,15 @@ function purchase_request_node_form_validate($form, &$form_state) {
     if(isset($form_state['input']['field_pr_author']) && is_numeric($form_state['input']['field_pr_author'][LANGUAGE_NONE])){
       $form_state['values']['uid'][LANGUAGE_NONE] = $form_state['input']['field_pr_author'][LANGUAGE_NONE];
     }
+    //set PR Reference #
+
+    $field_financial_year = camplus_pr_get_current_financial_year();
+    $financial_year = substr($field_financial_year,0,4)-1;
+    $financial_year_end = substr($field_financial_year,2,2);
+    $form_state['input']['field_pr_reference_no'][LANGUAGE_NONE][0]['value'] = variable_get('camplus_pr_no_pattern_prefix', 'PR').'-'.$financial_year .'/'. $financial_year_end ."-0000-";//.$row->nid
+          
+          dpm($form_state['input']['field_pr_reference_no'][LANGUAGE_NONE][0]['value']);
+
     if(form_get_errors()) {
       return;
     }

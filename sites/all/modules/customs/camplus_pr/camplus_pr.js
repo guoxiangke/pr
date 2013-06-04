@@ -88,6 +88,7 @@
 		countTotalBInoblur();
 	});
 	// field_multiple_bi_reason
-	$('#field-multiple-bi-reason-add-more-wrapper').hide();
-
+	if(!$('#edit-fgm-node-purchase-request-form-group-budgets-fields-items-1-field-budget-items-amount-und-value')) {
+		$('#field-multiple-bi-reason-add-more-wrapper').hide();
+	}
 });

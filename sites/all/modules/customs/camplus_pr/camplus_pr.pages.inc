@@ -235,12 +235,12 @@ function camplus_pr_settings_form() {
     '#default_value' => variable_get('camplus_pr_financial_year_begin', '09-01'),
     '#required' => TRUE,
   );  
-  // $form['camplus_pr_financial_year_end'] = array(
-  //   '#type' => 'textfield',
-  //   '#title' => t('Financial Year End'),
-  //   '#default_value' => variable_get('camplus_pr_financial_year_end', '08-31'),
-  //   '#required' => TRUE,
-  // );    
+  $form['camplus_pr_financial_year_end'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Financial Year End'),
+    '#default_value' => variable_get('camplus_pr_financial_year_end', '08-31'),
+    '#required' => TRUE,
+  );    
   $form['camplus_pr_enable_mixable_key'] = array(
     '#type' => 'checkbox',
     '#title' => t('Enable Budget Pool'),
