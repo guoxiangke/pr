@@ -41,9 +41,18 @@
 				countTotalBInoblur();
 			});
 			
-			$('#edit-fgm-node-purchase-request-form-group-ref-supplier-add-more').click(function(){
-				$('#field-multiple-bi-reason-add-more-wrapper').slideDown();
-			});
+			if($('#edit-fgm-node-purchase-request-form-group-budgets-fields-items-1-field-budget-items-amount-und-value')) {
+				$('#field-multiple-bi-reason-add-more-wrapper').show();
+			}
+			// jQuery(document).ready(function () {
+			// 	console.log('show?3	');
+			// 	jQuery('#edit-fgm-node-purchase-request-form-group-budgets-add-more').click(function(){
+					
+			// 		jQuery('#edit-fgm-node-purchase-request-form-group-budgets-add-more').hide();
+			// 		console.log('show?4');
+			// 	});
+			// });
+
 				
 		}
 	}
@@ -78,7 +87,7 @@
 		// e.preventDefault();
 		countTotalBInoblur();
 	});
-
+	// field_multiple_bi_reason
 	$('#field-multiple-bi-reason-add-more-wrapper').hide();
 
 });
