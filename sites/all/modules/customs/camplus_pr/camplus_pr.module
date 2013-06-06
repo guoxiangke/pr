@@ -361,6 +361,7 @@ function purchase_request_node_form_validate($form, &$form_state) {
   // Budget Items field && Budget Items amount field validate
   $department = array();
   $total = 0;
+  $howmany = 0;
   if($form_state['input']['fgm_node_purchase_request_form_group_budgets']['fields'])
   foreach ($form_state['input']['fgm_node_purchase_request_form_group_budgets']['fields'] as $key1 => $variable) {
     $field_budget_items_amount = 0;
@@ -406,11 +407,9 @@ function purchase_request_node_form_validate($form, &$form_state) {
 
 
       if($field_budget_items_amount > $bis_info_all['g']) {
-        dpm($field_budget_items_amount,'$field_budget_items_amount>g'.$bis_info_all['g']);
         form_set_error('[field_budget_items_amount][und][value]', t('Your Requested Amount exceeds the Maximum Budget in your Department, your application CANNOT be submitted!'));
       }
       if($field_budget_items_amount > $bis_info_all['d']) {
-        dpm($field_budget_items_amount,'$field_budget_items_amount>d'.$bis_info_all['d']);
         drupal_set_message(t('Your Requested Amount exceeds the Budgeted Amount, your application may not be approved!'), 'warning', FALSE);
       }
       if($field_budget_items_amounts[$key] > $bis_info_all['g']) {//通用余额  get_bi_mixable_amount($field_budget_items[$key]
@@ -420,8 +419,7 @@ function purchase_request_node_form_validate($form, &$form_state) {
     }
      // form_set_error('[field_budget_items_amount][und][value]', t('test!!!'));
   }
-
-  if(empty($form_state['values']['field_multiple_bi_reason'][LANGUAGE_NONE][0]['value'])) {
+  if(count($form_state['input']['fgm_node_purchase_request_form_group_budgets']['fields']['items'])>1 && empty($form_state['values']['field_multiple_bi_reason'][LANGUAGE_NONE][0]['value'])) {
     form_set_error('field_multiple_bi_reason', t('You MUST specify reason of using more than 1 Budget Item?'));
   }
   //您不能跨部门预算
