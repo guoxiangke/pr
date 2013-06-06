@@ -7,5 +7,5 @@
  */
 ?>
 <div class="field-group-multiple-table">
-   <?php print $table; ?>
+  <?php print $table; ?>
 </div>
