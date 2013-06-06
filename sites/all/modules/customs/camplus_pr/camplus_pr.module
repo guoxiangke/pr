@@ -447,9 +447,9 @@ function purchase_request_node_form_validate($form, &$form_state) {
     $pr_quo_file_no = $camplus_pr_file_settings["pr_quo_file_no_$approve_rang"];
     $pr_ref_file_require = $camplus_pr_file_settings["pr_ref_file_require_$approve_rang"];
     // $file_settings = variable_get('camplus_pr_file_settings');
-    // dpm($file_settings);    
-    if($pr_quofile_require && !$form_state['input']['field_pr_quotation_file'][LANGUAGE_NONE][0]['fid']) {
-      form_set_error('files[field_pr_quotation_file_und_0]', t('must have quotation_file'));
+    // dpm($file_settings);
+    if($pr_quofile_require && !$form_state['input']['fgm_node_purchase_request_form_group_chosen']['fields']['items'][0]['field_pr_quotation_file'][LANGUAGE_NONE][0]['fid']) {
+      form_set_error('files[field_pr_quotation_file_und_0]', t('You MUST upload the quotation file from the Chosen Supplier!'));
     }
     
     //['field_pr_quotation_file'][LANGUAGE_NONE][0]['fid']
