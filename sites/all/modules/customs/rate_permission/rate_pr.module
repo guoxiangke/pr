@@ -11,6 +11,17 @@ function rate_pr_node_view($node, $view_mode, $langcode) {
   if(isset($flags['paid']) && $flags['paid']) {
      $show_flag = FALSE;
   }
+  //header变更，如果head没有group admin权限，不可以rate
+  global $user;
+  if(in_array('header', $user->roles)) {
+    $BI_nid = $node->field_budget_items[LANGUAGE_NONE][0]['target_id'];
+    $department_nid = node_load($BI_nid)->field_parents_department[LANGUAGE_NONE][0]['target_id'];
+    $og_roles = og_get_user_roles($group_type='node', $gid=$department_nid, $uid = NULL, $include = FALSE);
+    if(!in_array('panel head', $og_roles)) {
+        $show_flag = FALSE;
+    }
+  }
+  //end header变更
   if ($view_mode != 'rss' && $node->type == 'purchase_request') {
     // Adding the form to the node view
     $widgets = rate_get_active_widgets('node', $node->type, $view_mode);
@@ -485,5 +496,38 @@ function rate_pr_mail($key, &$message, $params) {
       // that a normal use of '<' will result in truncation of the message.
       $message['body'][] = check_plain($params['message']);
       break;
+  }
+}
+
+/**
+ * Implements hook_views_pre_render().
+ * header of panel head 用户只能看到自己所在Department下的my approval.
+ */
+function rate_pr_views_pre_render(&$view) {
+  if($view->name == 'purchase_request_list' && $view->current_display == 'pr_approval') {
+    global $user;
+    $except_roles = array('manager','principal','board');
+    $donext = TRUE;
+    foreach ($user->roles as $key => $role_name) {
+      if(in_array($role_name, $except_roles)) {
+        $donext = FALSE;
+        break;
+      }
+    }
+   if($donext)
+   foreach ($view->result as $key => $result) {
+      $department_nid = $result->field_field_parents_department[0]['raw']['target_id'];
+      if(!og_is_member('node', $department_nid)) {
+        unset($view->result[$key]);
+      }
+      //header变更，如果head没有group admin权限，views 不显示
+      $og_roles = og_get_user_roles('node', $department_nid);
+
+      if(!in_array('panel head', $og_roles) ) {
+          // $show_flag = FALSE;
+          // print $output;
+        unset($view->result[$key]);
+      }
+    }
   }
 }

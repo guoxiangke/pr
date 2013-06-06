@@ -766,7 +766,7 @@ function theme_camplus_pr_budget_settings_form($variables) {
 
   require_once drupal_get_path('module', 'phpexcel').'/phpexcel.inc';
   if(druedu_phpexcel_export($headers, $datas, $path)){ //@see phpexcel_export
-    drupal_set_message(t('Click '.l('here',$path)).' to download.', 'status');
+    // drupal_set_message(t('Click '.l('here',$path)).' to download.', 'status');
   }
 
   return $output;

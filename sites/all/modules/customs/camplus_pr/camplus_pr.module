@@ -370,6 +370,11 @@ function purchase_request_node_form_validate($form, &$form_state) {
       if(!$value['field_budget_items_amount']['und']['value'] && $value['field_budget_items']['und']!='_none') {
         form_set_error('og_group_ref[und]['.$key1.'][default]', t('Please fill the Budget Amount you request'));
       }
+      
+      if($value['field_budget_items_amount']['und']['value']<0) {
+        form_set_error('og_group_ref[und]['.$key1.'][default]', t('The Budget Amount cannot be negative!'));
+        //The Budget Amount you request cannot be --
+      }
       $total += $value['field_budget_items_amount']['und']['value'];
       $field_budget_items[$key] = $value['field_budget_items']['und'];
       if($field_budget_items[$key] == '_none') {
@@ -420,11 +425,20 @@ function purchase_request_node_form_validate($form, &$form_state) {
   // devel 显示用户输入值
   // dpm($field_budget_items,'$field_budget_items');
   // dpm($field_budget_items_amounts,'$field_budget_items_amounts');
-    $total += $form_state['input']['field_payment_from_students'][LANGUAGE_NONE][0]['value'];
+    if($form_state['input']['field_payment_from_students'][LANGUAGE_NONE][0]['value'] < 0) {
+      form_set_error('field_payment_from_students[und][0][value]', t('The amount paid from students cannot be negative!'));
+    }
+    $chosen_price = $total + $form_state['input']['field_payment_from_students'][LANGUAGE_NONE][0]['value'];
+
+    $form_state['values']['fgm_node_purchase_request_form_group_chosen']['fields']['items'][0]['field_chosen_price'][LANGUAGE_NONE]['value'] = $chosen_price;
+    // $form_state['input']['field_chosen_price'][LANGUAGE_NONE][0]['value'] = $chosen_price;
+      dpm($form_state['values'],$chosen_price);
+
+
     $camplus_pr_range_settings = variable_get('camplus_pr_range_settings'); 
-    // watchdog('camplus_pr-field_chosen_price', $total, array(), WATCHDOG_NOTICE, 'link');
+    // watchdog('camplus_pr-field_chosen_price', $chosen_price, array(), WATCHDOG_NOTICE, 'link');
     foreach ($camplus_pr_range_settings as $key => $value) {
-      if($value['end']-$total >= 0) {
+      if($value['end']-$chosen_price >= 0) {
         $approve_rang = $key;
         break;
       }
@@ -441,7 +455,7 @@ function purchase_request_node_form_validate($form, &$form_state) {
     }
     
     //['field_pr_quotation_file'][LANGUAGE_NONE][0]['fid']
-    $chosen_price = $total + $form_state['input']['field_payment_from_students'][LANGUAGE_NONE][0]['value'];
+    // $chosen_price = $total + $form_state['input']['field_payment_from_students'][LANGUAGE_NONE][0]['value'];
     if(!strlen($form_state['input']['field_lower_price_remark'][LANGUAGE_NONE][0]['value']) && $camplus_pr_file_settings["pr_quo_file_no_$approve_rang"] > 0 && $form_state['values']['field_pr_sole_supplier'][LANGUAGE_NONE][0]['value'] != 1)
     foreach ($form_state['input']['fgm_node_purchase_request_form_group_ref_supplier']['fields']['items'] as $key => $referenced) {
       if($chosen_price > $referenced['field_referenced_price'][LANGUAGE_NONE]['value']) {
@@ -500,7 +514,7 @@ function purchase_request_node_form_validate($form, &$form_state) {
     }
  //    drupal_set_message(t('This Application has not yet been submitted for Apporval Process.
  // <br>Reminded that, due to submission(s) by others, the Applicable Balance may change when you "Submit".'), 'warning', FALSE);
-    // form_set_error('[field_budget_items_amount][und][value]', t('test!!!'));
+
 }
 
 function purchase_request_node_form_submit_warning($form, &$form_state) {
@@ -1012,7 +1026,8 @@ function get_bis_info_all($budget_nid) {
 function camplus_pr_views_pre_render(&$view) {
   global $user;
   $camplus_pr_approvable_role_involved = variable_get('camplus_pr_approvable_role_involved','');
-  if(!($view->name == 'purchase_request_list' && $view->current_display == 'all_pr_wait')) return;
+  if(!($view->name == 'purchase_request_list' && $view->current_display == 'pr_approval')) return;
+
   $unset = FALSE;
   foreach ($camplus_pr_approvable_role_involved as $key => $value) {
     //是否有审核权限
@@ -1022,9 +1037,9 @@ function camplus_pr_views_pre_render(&$view) {
   }
   //如果我不在审核队列，全部unset
   if(!$unset){
-   // $view->result = array();
+    dpm('如果我不在审核队列，全部unset');
+    $view->result = array();
   }
-
   foreach ($view->result as $key => $value) {
   //所有等待我处理的PRs
     $node = node_load($value->nid);   //pr node
