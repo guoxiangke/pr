@@ -193,13 +193,13 @@ function camplus_pr_node_view($node, $view_mode, $langcode) {
   if(!$node->status &&$node->type ='purchase_request' && $user->uid == $node->uid){
     $node->content['undraft'] =  array(
       '#markup' => t('Submit'),
-      '#prefix' => '<a class= "button" href="node/'.$node->nid.'/undraft">',
+      '#prefix' => '<a class= "button" href="?q=node/'.$node->nid.'/undraft">',
       '#suffix' => '</a>', 
       '#weight' => -18,
     );
     $node->content['edit'] =  array(
       '#markup' => t('Edit'),
-      '#prefix' => '<a class= "button" href="node/'.$node->nid.'/edit">',
+      '#prefix' => '<a class= "button" href="?q=node/'.$node->nid.'/edit">',
       '#suffix' => '</a>', 
       '#weight' => -19,
     );
@@ -432,8 +432,6 @@ function purchase_request_node_form_validate($form, &$form_state) {
 
     $form_state['values']['fgm_node_purchase_request_form_group_chosen']['fields']['items'][0]['field_chosen_price'][LANGUAGE_NONE]['value'] = $chosen_price;
     // $form_state['input']['field_chosen_price'][LANGUAGE_NONE][0]['value'] = $chosen_price;
-      dpm($form_state['values'],$chosen_price);
-
 
     $camplus_pr_range_settings = variable_get('camplus_pr_range_settings'); 
     // watchdog('camplus_pr-field_chosen_price', $chosen_price, array(), WATCHDOG_NOTICE, 'link');

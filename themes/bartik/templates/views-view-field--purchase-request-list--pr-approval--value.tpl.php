@@ -22,7 +22,7 @@
  * the view is modified.
  */
   global $user;
-  if(in_array('header', $user->roles)) {
+  if(in_array('head', $user->roles)) {
 	  $department_nid = $row->field_field_budget_items[0]['raw']['entity']->field_parents_department[LANGUAGE_NONE][0]['target_id'];
 	  //header变更，如果head没有group admin权限，不可以rate
 	  $og_roles = og_get_user_roles($group_type='node', $gid=$department_nid, $uid = NULL, $include = FALSE);
