@@ -360,9 +360,9 @@ function camplus_pr_form_alter(&$form, &$form_state, $form_id) {
 function purchase_request_node_form_validate($form, &$form_state) {
   // Budget Items field && Budget Items amount field validate
   $department = array();
-  $total = 0;
   if($form_state['input']['fgm_node_purchase_request_form_group_budgets']['fields'])
   foreach ($form_state['input']['fgm_node_purchase_request_form_group_budgets']['fields'] as $key1 => $variable) {
+    $total = 0;
     foreach ($variable as $key => $value) {
       if($value['field_budget_items']['und']=='_none' && $value['field_budget_items_amount']['und']['value']) {
         form_set_error('og_group_ref[und]['.$key1.'][default]', t('Please select which Budget Item you request'));
@@ -375,7 +375,7 @@ function purchase_request_node_form_validate($form, &$form_state) {
         form_set_error('og_group_ref[und]['.$key1.'][default]', t('The Budget Amount cannot be negative!'));
         //The Budget Amount you request cannot be --
       }
-      $total += $value['field_budget_items_amount']['und']['value'];
+      $total = $value['field_budget_items_amount']['und']['value'];
       $field_budget_items[$key] = $value['field_budget_items']['und'];
       if($field_budget_items[$key] == '_none') {
         form_set_error('[field_budget_items_amount][und][value]', t('Please select which Budget Item you request'));
@@ -387,7 +387,7 @@ function purchase_request_node_form_validate($form, &$form_state) {
       $department[] = $node->field_parents_department[LANGUAGE_NONE][0]['target_id'];
       //不能重复选择部门
       if(count(array_unique($field_budget_items)) != count($field_budget_items)) {
-        form_set_error('[field_budget_items_amount][und][value]', t('Budget Items repeated!'));
+        form_set_error('[field_budget_items_amount][und][value]', t('Budget Items CANNOT repeat!'));
       }
 
       $field_budget_items_amounts[$key] = $value['field_budget_items_amount']['und']['value'];
@@ -404,9 +404,11 @@ function purchase_request_node_form_validate($form, &$form_state) {
 
 
       if($total > $bis_info_all['g']) {
+        // dpm($total,'$total>g'.$bis_info_all['g']);
         form_set_error('[field_budget_items_amount][und][value]', t('Your Requested Amount exceeds the Maximum Budget in your Department, your application CANNOT be submitted!'));
       }
       if($total > $bis_info_all['d']) {
+        // dpm($total,'$total>d'.$bis_info_all['d']);
         drupal_set_message(t('Your Requested Amount exceeds the Budgeted Amount, your application may not be approved!'), 'warning', FALSE);
       }
       if($field_budget_items_amounts[$key] > $bis_info_all['g']) {//通用余额  get_bi_mixable_amount($field_budget_items[$key]
@@ -418,7 +420,7 @@ function purchase_request_node_form_validate($form, &$form_state) {
   }
   //您不能跨部门预算
   if(count(array_unique($department))!=1) {
-     form_set_error('[field_budget_items_amount][und][value]', t('您不能跨部门预算'));
+     form_set_error('[field_budget_items_amount][und][value]', t('You CANNOT request a purchase from different Budget Item!'));
   }
   // Budget Items field && Budget Items amount field validate end
  
