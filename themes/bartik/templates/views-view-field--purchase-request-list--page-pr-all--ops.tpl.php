@@ -30,9 +30,8 @@
   // 7|Cancelled
   // dpm($row);
  $pr_node = node_load($row->nid);
- $show = array('1','5','6','7');
+ $show = array('4');
  if(in_array($pr_node->field_pr_status[LANGUAGE_NONE][0]['value'], $show)) {
- }else {
  	print $output;
  }
 ?>
