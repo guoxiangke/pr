@@ -476,10 +476,10 @@ function camplus_pr_budget_settings_form() {
 
       // Prepare the data
   $destination = variable_get('file_' . file_default_scheme() . '_path', conf_path() . '/files');
-
-  if (file_exists($destination.'/budget-report.xls')) {//&& arg(1)!='my_budget_report'
+  global $user;
+  if (file_exists($destination."/budget-report-$user->uid.xls")) {//&& arg(1)!='my_budget_report'
     $form['budget_report'] = array(
-      '#markup' => l('Download as Excel file', $destination.'/budget-report.xls'),
+      '#markup' => '<a href="/sites/default/files/budget-report-'.$user->uid.'.xls">Download as Excel file</a>',
     );
   }
 
@@ -591,8 +591,16 @@ function theme_camplus_pr_budget_settings_form($variables) {
   }
   $rows = array();
   $datas = array();
-  foreach (element_children($form['groups']) as $key=>$gid) {
-  
+  $budget_amount = 0;
+  $total_approved = 0;
+  $total_pending = 0;
+  $total_left = 0;
+  $total_allowance = 0;
+  $total_max_balance = 0;
+  $bis = element_children($form['groups']);
+  $next_node_type = 'school_department';
+  foreach ($bis as $key=>$gid) {
+   
     $group = &$form['groups'][$gid];
     $name = $group['#group']['name'];
     $row = array();
@@ -612,20 +620,33 @@ function theme_camplus_pr_budget_settings_form($variables) {
       $form['groups'][$gid]['weight']['#attributes']['class'] = array('group-weight');
       $row[] = drupal_render($form['groups'][$gid]['weight']);
       // $data[] = '';
-      if($node->type == 'budget_item'){
+
+      $total_data = array();
+      if($node->type == 'budget_item') {
         if(isset($node->field_pr_budget[LANGUAGE_NONE])) {
-          $field_pr_budget = $node->field_pr_budget[LANGUAGE_NONE][0]['value'];
-          $row[] = $node->body[LANGUAGE_NONE][0]['safe_value'];
-          $row[] = $field_pr_budget;
-          $data[] = $node->body[LANGUAGE_NONE][0]['safe_value'];
+          $field_pr_budget = (int) $node->field_pr_budget[LANGUAGE_NONE][0]['value'];
+          $description = '';
+          if(isset($node->body[LANGUAGE_NONE][0]['safe_value'])) $description = $node->body[LANGUAGE_NONE][0]['safe_value'];
+          $row[] =  $description;
+          $row[] = sprintf("%01.2f", $field_pr_budget);
+
+          $budget_amount += $field_pr_budget;
+          $data[] =  $description;
           $data[] = $field_pr_budget;
         }else{ 
-          $field_pr_budget = 0;
+          $field_pr_budget = 0.00;
           $row[] = '-';
           $row[] = '-';
+          $budget_amount = 0;
+          $total_approved = 0;
+          $total_pending = 0;
+          $total_left = 0;
+          $total_allowance = 0;
+          $total_max_balance = 0;
           $data[] = '-';
           $data[] = '-';
         }
+
        //已批支出 get all PRs
         $budget_nid = $gid;
         $prs = camplus_pr_get_prs($budget_nid);
@@ -675,11 +696,14 @@ function theme_camplus_pr_budget_settings_form($variables) {
          }
         $row[] = sprintf("%01.2f", $approved);
 
+        $total_approved += $approved;
         $data[] = sprintf("%01.2f", $approved);
         $row[] = sprintf("%01.2f", $pending);
+        $total_pending += $pending;
         $data[] = sprintf("%01.2f", $pending);
         $row_d = $field_pr_budget - $approved - $pending;
         $row[] = sprintf("%01.2f", $field_pr_budget - $approved - $pending);// '预算余额';
+        $total_left += $row_d;
         $data[] = sprintf("%01.2f", $field_pr_budget - $approved - $pending);// '预算余额';
         if(isset($node->field_pr_allowance[LANGUAGE_NONE])) {
           $row_e = $node->field_pr_allowance[LANGUAGE_NONE][0]['value'];
@@ -690,7 +714,9 @@ function theme_camplus_pr_budget_settings_form($variables) {
           $row[] = '-';
           $data[] = '-';
         }
+        $total_allowance += $row_e;
         $row[] = sprintf("%01.2f", $row_d + $row_e);//max余额
+        $total_max_balance += $row_d + $row_e;
         $data[] = sprintf("%01.2f", $row_d + $row_e);//max余额
         if(isset($node->field_pr_budget[LANGUAGE_NONE][0]['value'])) {
           $row[] = sprintf("%01.2f%%", ($approved + $pending)/$node->field_pr_budget[LANGUAGE_NONE][0]['value']*100);//%
@@ -717,6 +743,51 @@ function theme_camplus_pr_budget_settings_form($variables) {
         if(user_access('camplus budget settings') || in_array('administrator',$user->roles)) {
           $row[] = l(t('setting'), 'node/' . $gid.'/edit');
         }
+        $rows[$gid] = array('data' => $row, 'class' => array('draggable','locked'));
+
+
+      if(isset($bis[$key+1])) {
+        $next_node = node_load($bis[$key+1]);
+        $next_node_type = $next_node->type;
+      }
+      //
+      if($next_node_type == 'school_department'|| !isset($bis[$key+1])) {
+        $total=array();
+        $total[] = t('Total');$total_data[] = t('Total');//Amount
+        $total[] ='1'; $total_data[] = t('description');//des
+        $total[] =''; 
+
+        $total[] = sprintf("%01.2f", $budget_amount);
+        $total_data[] = sprintf("%01.2f", $budget_amount);
+        $total[] = sprintf("%01.2f", $total_approved); 
+        $total_data[] = sprintf("%01.2f", $total_approved);
+        $total_approved = 0;//已批支出
+
+        $total[] = sprintf("%01.2f", $total_pending); 
+        $total_data[] = sprintf("%01.2f", $total_pending);$total_pending = 0;//待批支出
+        $total[] = sprintf("%01.2f", $total_left); 
+        $total_data[] = sprintf("%01.2f", $total_left);
+        $total[] = sprintf("%01.2f", $total_allowance);
+        $total_data[] = sprintf("%01.2f", $total_allowance); $total_allowance = 0;//Allowance
+        $total[] = sprintf("%01.2f", $total_max_balance); 
+        $total_data[] = sprintf("%01.2f", $total_max_balance);$total_max_balance = 0; //max余额
+        $total[] = sprintf("%01.2f%%", 100*($budget_amount-$total_left)/$budget_amount);//%
+        $total_data[] = sprintf("%01.2f%%", 100*($budget_amount-$total_left)/$budget_amount);
+        $budget_amount = 0;//Amount
+        $total_left = 0;//预算余额
+
+        if(arg(1)!='my_budget_report') {
+          $total[] ='';//Mixable Key
+          $total[] ='';//通用余额
+          $total_data[] = '';//des
+          $total_data[] = '';//des
+        }
+        $total[] = '';//des
+        $rows["total_$key"] = array('data' => $total, 'class' => array('draggable','locked'));
+        // array_merge($datas, $total_data);
+       
+      }
+
       }else {
         $row[] ='';$data[] = '';//Amount
         $row[] ='';$data[] = '';//des
@@ -733,9 +804,17 @@ function theme_camplus_pr_budget_settings_form($variables) {
         if(user_access('camplus budget settings') || in_array('administrator',$user->roles)) {
           $row[] ='';//l(t('edit'), 'node/' . $gid.'/edit');
         }
+        $rows[$gid] = array('data' => $row, 'class' => array('draggable','locked'));
+
+
+
+
       }
       $datas[] = $data;
-      $rows[$gid] = array('data' => $row, 'class' => array('draggable','locked'));
+      if($next_node_type == 'school_department'|| !isset($bis[$key+1])) {
+         $datas[] = $total_data;
+      }
+
     }
   }
   // Add drag and drop if parent fields are present in the form.
@@ -759,10 +838,11 @@ function theme_camplus_pr_budget_settings_form($variables) {
   // foreach ($rows as $key => $value) {
   //   $data[] = $value['data'];
   // }
-  if (file_exists($destination.'/budget-report.xls')) {
-    drupal_unlink($destination.'/budget-report.xls');
+  $file_name = "budget-report-$user->uid.xls";
+  if (file_exists($destination. '/' .$file_name)) {
+    drupal_unlink($destination. '/' .$file_name);
   }
-  $path = file_create_filename('budget-report.xls', $destination);
+  $path = file_create_filename($file_name, $destination);
 
   require_once drupal_get_path('module', 'phpexcel').'/phpexcel.inc';
   if(druedu_phpexcel_export($headers, $datas, $path)){ //@see phpexcel_export
