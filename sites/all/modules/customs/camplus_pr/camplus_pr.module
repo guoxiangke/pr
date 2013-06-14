@@ -356,9 +356,44 @@ function camplus_pr_form_alter(&$form, &$form_state, $form_id) {
     }
   }
 }
+/**
+ * Implements hook_node_submit().
+ */
+function camplus_pr_node_submit($node, $form, &$form_state) {
+  // Decompose the selected menu parent option into 'menu_name' and 'plid', if
+  // the form used the default parent selection widget.
+  /*
+   *if (!empty($form_state['values']['menu']['parent'])) {
+   *  list($node->menu['menu_name'], $node->menu['plid']) = explode(':', $form_state['values']['menu']['parent']);
+   *}
+   */
+  // dpm($form_state,'form_state1');
+  $fid = $form_state['input']['fgm_node_purchase_request_form_group_chosen']['fields']['items'][0]['field_pr_quotation_file'][LANGUAGE_NONE][0]['fid'];
+  $file = file_load($fid);
+  // dpm($fid,'field_pr_quotation_file');
+  // field_attach_insert($entity_type, $entity)
+  $field_file = (array) $file;
+  $field_file['display'] = 1;
+  $node->field_pr_quotation_file[LANGUAGE_NONE][] = $field_file;
+
+  // file_usage_add($file, 'file', $entity_type = 'node', $id = $node->nid);
+  foreach ($form_state['input']['fgm_node_purchase_request_form_group_ref_supplier']['fields']['items'] as $key => $value) {
+    # code...
+    $fid = $value['field_pr_ref_quotation_file'][LANGUAGE_NONE][0]['fid'];
+    $file = file_load($fid);
+
+    $field_file = (array) $file;
+    $field_file['display'] = 1;
+  
+    // dpm($file,'field_pr_ref_quotation_file');
+    $node->field_pr_ref_quotation_file[LANGUAGE_NONE][] = $field_file;
+    // file_usage_add($file, 'file', $entity_type = 'node', $id = $node->nid);
+  }
+}
 
 function purchase_request_node_form_validate($form, &$form_state) {
   // Budget Items field && Budget Items amount field validate
+ 
   $department = array();
   $total = 0;
   $howmany = 0;
