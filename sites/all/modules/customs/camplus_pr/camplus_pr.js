@@ -43,7 +43,7 @@
 				countTotalBInoblur();
 			});
 			
-			if($('#edit-fgm-node-purchase-request-form-group-budgets-fields-items-1-field-budget-items-amount-und-value')) {
+			if($('#edit-fgm-node-purchase-request-form-group-budgets-fields-items-1-field-budget-items-amount-und-value').length != 0) {
 				$('#field-multiple-bi-reason-add-more-wrapper').show();
 			}
 			// jQuery(document).ready(function () {

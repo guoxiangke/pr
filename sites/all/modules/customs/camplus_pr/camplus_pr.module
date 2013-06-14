@@ -479,6 +479,7 @@ function purchase_request_node_form_validate($form, &$form_state) {
 
     $camplus_pr_range_settings = variable_get('camplus_pr_range_settings'); 
     // watchdog('camplus_pr-field_chosen_price', $chosen_price, array(), WATCHDOG_NOTICE, 'link');
+    $approve_rang = 0;
     foreach ($camplus_pr_range_settings as $key => $value) {
       if($value['end']-$chosen_price >= 0) {
         $approve_rang = $key;
@@ -532,7 +533,7 @@ function purchase_request_node_form_validate($form, &$form_state) {
       }
     }
     if($pr_quo_file_no != 0 && $form_state['values']['field_pr_sole_supplier'][LANGUAGE_NONE][0]['value'] != 1 && $pr_quo_file_no > count($form_state['input']['fgm_node_purchase_request_form_group_ref_supplier']['fields']['items']) ) {
-      form_set_error('[field_budget_items_amount][und][value]', t('You MUST upload  '.$pr_quo_file_no .' quotation file(s) from the Reference Supplier!'));
+      form_set_error('field_budget_items_amount', t('You MUST upload  '.$pr_quo_file_no .' quotation file(s) from the Reference Supplier!'));
     }
 
 
@@ -550,6 +551,11 @@ function purchase_request_node_form_validate($form, &$form_state) {
     $financial_year = substr($field_financial_year,0,4)-1;
     $financial_year_end = substr($field_financial_year,2,2);
     $form_state['values']['field_pr_reference'][LANGUAGE_NONE][0]['value'] = variable_get('camplus_pr_no_pattern_prefix', 'PR').'-'.$financial_year .'/'. $financial_year_end ."-0000-";//.$row->nid
+
+    //http://pm.intechnigence.com/node/138
+    $camplus_pr_range_settings = variable_get('camplus_pr_range_settings');
+    $end = end($camplus_pr_range_settings);
+    if($chosen_price > $end['end']) form_set_error('field_budget_items_amount', t('Purchase Amount larger than '.$end['end'].' requiring Tender Process! The system will not handle it!'));
 
     if(form_get_errors()) {
       return;
