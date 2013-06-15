@@ -360,13 +360,7 @@ function camplus_pr_form_alter(&$form, &$form_state, $form_id) {
  * Implements hook_node_submit().
  */
 function camplus_pr_node_submit($node, $form, &$form_state) {
-  // Decompose the selected menu parent option into 'menu_name' and 'plid', if
-  // the form used the default parent selection widget.
-  /*
-   *if (!empty($form_state['values']['menu']['parent'])) {
-   *  list($node->menu['menu_name'], $node->menu['plid']) = explode(':', $form_state['values']['menu']['parent']);
-   *}
-   */
+  if($node->type != 'purchase_request') return;
   // dpm($form_state,'form_state1');
   $fid = $form_state['input']['fgm_node_purchase_request_form_group_chosen']['fields']['items'][0]['field_pr_quotation_file'][LANGUAGE_NONE][0]['fid'];
   if($fid) {
