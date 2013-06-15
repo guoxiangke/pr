@@ -1079,7 +1079,7 @@ function camplus_pr_views_pre_render(&$view) {
   }
   //如果我不在审核队列，全部unset
   if(!$unset){
-    dpm('如果我不在审核队列，全部unset');
+    // dpm('如果我不在审核队列，全部unset');
     $view->result = array();
   }
   foreach ($view->result as $key => $value) {
