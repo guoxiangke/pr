@@ -30,7 +30,7 @@
 						total += parseFloat($(this).val()) || 0;
 					});
 					if($('#edit-field-payment-from-students input').val()<0)$('#edit-field-payment-from-students input').val(0);
-					total += parseFloat($('#edit-field-payment-from-students input').val());
+					total += parseFloat($('#edit-field-payment-from-students input').val()|| 0);
 					$('.multiple-field-chosen-price input').val(total);
 				});
 			}
@@ -68,7 +68,7 @@
 				total += parseFloat($(this).val()) || 0;
 			});
 			if($('#edit-field-payment-from-students input').val()<0)$('#edit-field-payment-from-students input').val(0);
-			total += parseFloat($('#edit-field-payment-from-students input').val());
+			total += parseFloat($('#edit-field-payment-from-students input').val()|| 0);
 			$('.multiple-field-chosen-price input').val(total);
 		});
 	}
@@ -81,7 +81,7 @@
 				total += parseFloat($(this).val()) || 0;
 			});
 			if($('#edit-field-payment-from-students input').val()<0)$('#edit-field-payment-from-students input').val(0);
-			total += parseFloat($('#edit-field-payment-from-students input').val());
+			total += parseFloat($('#edit-field-payment-from-students input').val()|| 0);
 			$('.multiple-field-chosen-price input').val(total);
 		});
 	}
