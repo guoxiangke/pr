@@ -25,7 +25,7 @@
 	//是否canceled？ flag
 	// $node = $row->_field_data['nid']['entity'];
 $g = flag_get_counts($content_type='node',$row->nid, $reset = FALSE);
-$show = TURE;
+$show = TRUE;
 if(isset($g['cancel']) && $g['cancel']) $show = FALSE;
   global $user;
   if(in_array('head', $user->roles)) {

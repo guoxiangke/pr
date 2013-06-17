@@ -243,8 +243,8 @@ function _camplus_pr_get_approve_rate($node) {
   }
   return FALSE;
 }
-
-function camplus_par_get_vote($node, $account=NULL) {
+// will delete
+function camplus_pr_get_vote($node, $account=NULL) {
   global $user;
   if(!$account) $account = $user;
     //strtotime($field_financial_year);
