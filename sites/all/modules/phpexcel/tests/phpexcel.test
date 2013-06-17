@@ -8,6 +8,7 @@
 class PHPExcelTest extends DrupalWebTestCase {
   
   protected $single_worksheet_file;
+  protected $issue_1988868_file;
   protected $multiple_worksheet_file;
   protected $no_headers_file;
   protected $db_result_file;
@@ -35,6 +36,7 @@ class PHPExcelTest extends DrupalWebTestCase {
   
   public function tearDown() {
     @unlink($this->single_worksheet_file);
+    @unlink($this->issue_1988868_file);
     @unlink($this->multiple_worksheet_file);
     @unlink($this->no_headers_file);
     @unlink($this->db_result_file);
@@ -52,7 +54,7 @@ class PHPExcelTest extends DrupalWebTestCase {
      */
     // Prepare the data
     $headers = array('Header 1', 'Header 2');
-    $this->verbose('<pre>' . print_r(libraries_load('PHPExcel'), 1));
+
     $data = array(
       array('Data 1.1', 'Data 1.2'),
       array('Data 2.1', 'Data 2.2'),
@@ -82,17 +84,17 @@ class PHPExcelTest extends DrupalWebTestCase {
      * Import, not keyed by headers
      */
     $data = phpexcel_import($this->single_worksheet_file, FALSE);
-    
+
     // Should pass
     $this->assertTrue(!!$data, 'Import succeeded');
     
     // Should have 4 rows (3 rows + headers)
     $count = !empty($data[0]) ? count($data[0]) : 0;
-    $this->assertTrue($count === 4, t('!count rows', array('!count' => $count)));
+    $this->assertTrue($count === 4, t('!count rows, expect 4.', array('!count' => $count)));
     
     // Should only have 2 cells
     $count = !empty($data[0][0]) ? count($data[0][0]) : 0;
-    $this->assertTrue($count === 2, t('!count cells', array('!count' => $count)));
+    $this->assertTrue($count === 2, t('!count cells, expect 2.', array('!count' => $count)));
     
     // First row, 1st cell should be 'Header 1'
     $header = !empty($data[0][0][0]) ? $data[0][0][0] : 'no';
@@ -101,6 +103,66 @@ class PHPExcelTest extends DrupalWebTestCase {
     // Second row, 1st cell should be 'Data 1.1'
     $header = !empty($data[0][1][0]) ? $data[0][1][0] : 'no';
     $this->assertTrue($header === 'Data 1.1', 'Second row, 1st cell data should be "Data 1.1"');
+  }
+
+  /**
+   * A cell with a value of '0' must get exported as such.
+   *
+   * @see http://drupal.org/node/1988868
+   */
+  public function testIssue1988868() {
+    /**
+     * Export
+     */
+    // Prepare the data
+    $headers = array('Header 1', 'Header 2');
+
+    $data = array(
+      array('0', 'Data 1.2'),
+      array('Data 2.1', '0'),
+      array('0', '0')
+    );
+
+    // Create a file path
+    $correct_path = file_create_filename('phpexcel_test1.xls', $this->directory);
+
+    // The filename will be munged by the export function, so:
+    $this->issue_1988868_file = phpexcel_munge_filename($correct_path);
+
+    // Should pass
+    $this->assertEqual(PHPEXCEL_SUCCESS, phpexcel_export($headers, $data, $correct_path), t('Exported data to !path', array('!path' => $this->issue_1988868_file)));
+
+    // Should pass
+    $this->assertTrue(filesize($this->issue_1988868_file) > 0, 'Filesize should be bigger than 0');
+
+    /**
+     * Import and check.
+     * Import, not keyed by headers
+     */
+    $data = phpexcel_import($this->issue_1988868_file, FALSE);
+
+    // Should pass
+    $this->assertTrue(!!$data, 'Import succeeded');
+
+    // Second row, 1st cell should be 'Data 1.1'
+    $cell = $data[0][1][0];
+    $this->assertTrue($cell === '0', 'Second row, 1st cell data should be "0"');
+
+    // Second row, 2nd cell should be 'Data 1.1'
+    $cell = $data[0][1][1];
+    $this->assertTrue($cell === 'Data 1.2', 'Second row, 2nd cell data should be "Data 1.2"');
+
+    // Third row, 2nd cell should be '0'
+    $cell = $data[0][2][1];
+    $this->assertTrue($cell === '0', 'Third row, 2nd cell data should be "0"');
+
+    // Fourth row, 1st cell should be '0'
+    $cell = $data[0][3][0];
+    $this->assertTrue($cell === '0', 'Fourth row, 1st cell data should be "0"');
+
+    // Fourth row, 2nd cell should be '0'
+    $cell = $data[0][3][1];
+    $this->assertTrue($cell === '0', 'Fourth row, 2nd cell data should be "0"');
   }
   
   /**
@@ -146,17 +208,17 @@ class PHPExcelTest extends DrupalWebTestCase {
      * Import, keyed by headers
      */
     $data = phpexcel_import($this->multiple_worksheet_file);
-    
+
     // Should pass
     $this->assertTrue(!!$data, 'Import succeeded');
     
     // Should have 3 rows
     $count = !empty($data[0]) ? count($data[0]) : 0;
-    $this->assertTrue($count === 3, t('!count rows', array('!count' => $count)));
+    $this->assertTrue($count === 3, t('!count rows, expect 3', array('!count' => $count)));
     
     // Should only have 2 cells
     $count = !empty($data[0][0]) ? count($data[0][0]) : 0;
-    $this->assertTrue($count === 2, t('!count cells', array('!count' => $count)));
+    $this->assertTrue($count === 2, t('!count cells, expect 2', array('!count' => $count)));
     
     // Should be keyed by headers
     $this->assertTrue(isset($data[0][0]['Header 1.1']), 'Keyed by header ("Header 1.1")');
@@ -166,6 +228,37 @@ class PHPExcelTest extends DrupalWebTestCase {
     $this->assertTrue($header === 'Data 1.1.1', 'Should be "Data 1.1.1"');
     
     $header = !empty($data[1][1]['Header 2.2']) ? $data[1][1]['Header 2.2'] : 'no';
+    $this->assertTrue($header === 'Data 2.2.2', 'Should be "Data 2.2.2"');
+
+    /**
+     * Import and check.
+     * Import with worksheet names.
+     */
+    $data = phpexcel_import($this->multiple_worksheet_file, TRUE, TRUE);
+
+    // Should pass
+    $this->assertTrue(!!$data, 'Import succeeded');
+
+    // Should have 3 rows
+    $count = !empty($data['Sheet 1']) ? count($data['Sheet 1']) : 0;
+    $this->assertTrue($count === 3, t('!count rows, expect 3', array('!count' => $count)));
+
+    // Should be keyed by Worksheet name.
+    $this->assertTrue(isset($data['Sheet 1']), t('Imported with Worksheet names.'));
+    $this->assertTrue(isset($data['Sheet 2']), t('Imported with Worksheet names.'));
+
+    // Should only have 2 cells
+    $count = !empty($data['Sheet 1'][0]) ? count($data['Sheet 1'][0]) : 0;
+    $this->assertTrue($count === 2, t('!count cells, expect 2', array('!count' => $count)));
+
+    // Should be keyed by headers
+    $this->assertTrue(isset($data['Sheet 1'][0]['Header 1.1']), 'Keyed by header ("Header 1.1")');
+    $this->assertTrue(isset($data['Sheet 2'][0]['Header 2.2']), 'Keyed by header ("Header 2.2")');
+
+    $header = !empty($data['Sheet 1'][0]['Header 1.1']) ? $data['Sheet 1'][0]['Header 1.1'] : 'no';
+    $this->assertTrue($header === 'Data 1.1.1', 'Should be "Data 1.1.1"');
+
+    $header = !empty($data['Sheet 2'][1]['Header 2.2']) ? $data['Sheet 2'][1]['Header 2.2'] : 'no';
     $this->assertTrue($header === 'Data 2.2.2', 'Should be "Data 2.2.2"');
   }
   
@@ -213,11 +306,11 @@ class PHPExcelTest extends DrupalWebTestCase {
     
     // Should have 3 rows
     $count = !empty($data[0]) ? count($data[0]) : 0;
-    $this->assertTrue($count === 3, t('!count rows', array('!count' => $count)));
+    $this->assertTrue($count === 3, t('!count rows, expect 3', array('!count' => $count)));
     
     // Should only have 2 cells
     $count = !empty($data[0][0]) ? count($data[0][0]) : 0;
-    $this->assertTrue($count === 2, t('!count cells', array('!count' => $count)));
+    $this->assertTrue($count === 2, t('!count cells, expect 2', array('!count' => $count)));
     
     $header = !empty($data[0][0][0]) ? $data[0][0][0] : 'no';
     $this->assertTrue($header === 'Data 1.1.1', 'Should be "Data 1.1.1"');
@@ -263,13 +356,13 @@ class PHPExcelTest extends DrupalWebTestCase {
      * Import and check.
      */
     $data = phpexcel_import($this->template_file, FALSE);
-    
+
     // Should pass
     $this->assertTrue(!!$data, 'Import succeeded');
     
     // Should have 3 rows (3 rows and no headers)
     $count = !empty($data[0]) ? count($data[0]) : 0;
-    $this->assertTrue($count === 3, t('!count rows', array('!count' => $count)));
+    $this->assertTrue($count === 3, t('!count rows, expect 3', array('!count' => $count)));
     
     // First row, 1st cell should be 'Data 1.1'
     $header = !empty($data[0][0][0]) ? $data[0][0][0] : 'no';
@@ -323,17 +416,17 @@ class PHPExcelTest extends DrupalWebTestCase {
      * Import, cells keyed by headers.
      */
     $data = phpexcel_import($this->db_result_file);
-    
+
     // Should pass
     $this->assertTrue(!!$data, 'Import succeeded');
     
     // Should have 10 rows
     $count = count($data[0]);
-    $this->assertTrue($count === 10, t('!count rows', array('!count' => $count)));
+    $this->assertTrue($count === 10, t('!count rows, expect 10', array('!count' => $count)));
     
     // Should only have 2 cells
     $count = count($data[0][0]);
-    $this->assertTrue($count === 2, t('!count cells', array('!count' => $count)));
+    $this->assertTrue($count === 2, t('!count cells, expect 2', array('!count' => $count)));
     
     // Should be keyed by headers (nid & title)
     $this->assertTrue(isset($data[0][0]['nid']), 'Keyed by header (nid)');

@@ -6,9 +6,9 @@ dependencies[] = libraries
 files[] = tests/phpexcel.test
 
 
-; Information added by drupal.org packaging script on 2013-04-09
-version = "7.x-3.4"
+; Information added by drupal.org packaging script on 2013-05-31
+version = "7.x-3.6"
 core = "7.x"
 project = "phpexcel"
-datestamp = "1365500430"
+datestamp = "1370022897"
 
