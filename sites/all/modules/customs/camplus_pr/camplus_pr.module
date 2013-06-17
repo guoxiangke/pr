@@ -1105,7 +1105,7 @@ function camplus_pr_views_pre_render(&$view) {
         $approve_status = _rate_pr_check_permissions($node,$widget);
         // dpm ($approve_status['workflow_status']);
         //等待penging
-        if($approve_status['workflow_status'] != 'pending' && !camplus_par_get_vote($node)) unset($view->result[$key]);
+        if($approve_status['workflow_status'] != 'pending' && !camplus_pr_get_vote($node)) unset($view->result[$key]);
         //等待我 TODO
         //todo: 
         // unset rate widget 如果我的上一级部门没有审核的话，在views里不显示。可以用veiws template实现，
