@@ -614,10 +614,10 @@ function form_process_field_budget_items(&$element) {
 
         if(isset($budget_items) && is_array($budget_items))
         foreach ($budget_items as $budget_item_nid => $title) {
-          
           $node = node_load($budget_item_nid);
-
           if(!$node) continue;
+          $element['#options'][$budget_item_nid] = $node->title . $node->body[LANGUAGE_NONE][0]['safe_value'];
+          // dpm($element);
           //去除不是当前学年的
           if(!isset($node->field_financial_year[LANGUAGE_NONE][0]['value']) || $node->field_financial_year[LANGUAGE_NONE][0]['value'] != camplus_pr_get_current_financial_year() ){
             //|| !in_array($node->field_parents_department[LANGUAGE_NONE][0]['target_id'], $department)
@@ -643,6 +643,15 @@ function form_process_field_budget_items(&$element) {
           $element['#options']['_none'] = t('- Select a value -');
           $element['#default_value'] = '_none';
 
+        }
+      }else {
+        $budget_items = $element['#options'];
+
+        if(isset($budget_items) && is_array($budget_items))
+        foreach ($budget_items as $budget_item_nid => $title) {
+          $node = node_load($budget_item_nid);
+          if(!$node) continue;
+          $element['#options'][$budget_item_nid] = $node->title . $node->body[LANGUAGE_NONE][0]['safe_value'];
         }
       }
     }
@@ -1069,11 +1078,11 @@ function get_bis_info_all($budget_nid) {
   return $row;
 }
 
-
 function camplus_pr_views_pre_render(&$view) {
   global $user;
   $camplus_pr_approvable_role_involved = variable_get('camplus_pr_approvable_role_involved','');
   if(!($view->name == 'purchase_request_list' && $view->current_display == 'pr_approval')) return;
+
 
   $unset = FALSE;
   foreach ($camplus_pr_approvable_role_involved as $key => $value) {
