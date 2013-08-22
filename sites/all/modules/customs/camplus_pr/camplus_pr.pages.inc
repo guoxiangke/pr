@@ -130,7 +130,15 @@ function camplus_pr_range_settings_form() {
  $i=0;
  $range = variable_get('camplus_pr_settings_range', '5');
  $range_settings = variable_get('camplus_pr_range_settings', ''); 
+ $camplus_pr_file_settings = variable_get('camplus_pr_file_settings');
  while($i<$range){
+  if(!isset($range_settings[$i])) {
+    $range_settings[$i]["begin"] = '';
+    $range_settings[$i]["end"] = '';
+    $camplus_pr_file_settings["pr_quofile_require_$i"] = 0;
+    $camplus_pr_file_settings["pr_quo_file_no_$i"] = 0;
+    $camplus_pr_file_settings["pr_ref_file_require_$i"] =0;
+  }
     $form[$i]['range']["pr_range_begin_$i"] = array(
       '#type' => 'textfield',
       '#default_value' =>$range_settings[$i]["begin"],
@@ -143,7 +151,6 @@ function camplus_pr_range_settings_form() {
       '#prefix' => 'HK$',
       '#size' => 20, 
     );
-    $camplus_pr_file_settings = variable_get('camplus_pr_file_settings');
     $form[$i]["pr_quofile_require_$i"] = array(
       '#type' => 'checkbox',
       '#default_value' => $camplus_pr_file_settings["pr_quofile_require_$i"],
