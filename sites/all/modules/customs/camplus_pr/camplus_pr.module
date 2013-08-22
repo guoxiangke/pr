@@ -1077,7 +1077,6 @@ function get_bis_info_all($budget_nid) {
   $row['g'] = get_bi_mixable_amount($budget_nid);//'通用余额';
   return $row;
 }
-
 function camplus_pr_views_pre_render(&$view) {
   global $user;
   $camplus_pr_approvable_role_involved = variable_get('camplus_pr_approvable_role_involved','');
