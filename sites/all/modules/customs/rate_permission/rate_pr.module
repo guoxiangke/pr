@@ -75,9 +75,9 @@ function _rate_pr_check_permissions($node, $widget, $user = NULL) {
     // $field_chosen_price = $node->field_chosen_price[LANGUAGE_NONE][0]['value'];
     $field_payment_from_students = $node->field_payment_from_students[LANGUAGE_NONE][0]['value'];
     $total = $field_chosen_price + $field_payment_from_students;//3300
-    // if($debug && $node->nid==38) dpm($total,'total');
+    if($debug && $node->nid==544) dpm($total,'total');
     $camplus_pr_range_settings = variable_get('camplus_pr_range_settings');
-    // if($debug && $node->nid==38) dpm($camplus_pr_range_settings,'$camplus_pr_range_settings');
+    if($debug && $node->nid==544) dpm($camplus_pr_range_settings,'$camplus_pr_range_settings');
     foreach ($camplus_pr_range_settings as $key => $value) {
       if($value['end']-$total >= 0) {
         $approve_rang = $key; //the $key+1 group settings.
@@ -90,15 +90,17 @@ function _rate_pr_check_permissions($node, $widget, $user = NULL) {
     $workflow_settings = $workflow_settings[$approve_rang];
     // if($debug) dpm($workflow_settings,'workflow_settings');
     $rate_results = rate_get_results('node', $node->nid, $widget->id);
-
     if($rate_results['options']['-1']) {   //attention -1,can not change.
     //即有人选择reject，审核不通过
       $approve_status['workflow_status'] = 'reject';
+      $approve_status['reject_counts'] = $rate_results['options']['-1'];
       if($debug) dpm('审核不通过,即有人选择');
     }elseif($rate_results['options']['1'] == count(array_filter($workflow_settings))) {//all choosed approve,审核通过
       $approve_status['workflow_status'] = 'approved';
+      $approve_status['approved_counts'] = $rate_results['options']['1'];
        if($debug) dpm('审核通过');
     }else {//审核中
+      $approve_status['approved_counts'] = $rate_results['options']['1'];
        $approve_status['workflow_status'] = 'pending';
        if($debug) dpm('审核中42');
     }
