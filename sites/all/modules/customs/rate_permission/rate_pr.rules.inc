@@ -258,22 +258,17 @@ function rate_pr_action_email_to_next_role($node) {
   // "params" loads in additional context for email content completion in
   // hook_mail(). In this case, we want to pass in the values the user entered
   // into the form, which include the message body in $form_values['message'].
-  $role_name = user_roles();
-  $role_name = $role_name[$next_rid];
-  $role_name_before = $role_name[$workflow_settings_node[$approve_status['approved_counts']]];
   $params = array(
     'subject' => "Purchase Request of $node->title ,your turns!",
-    'message' => "Dear $role_name</br>
+    'message' => 'Dear $role_name</br>
 
-$role_name_before had approvaled a Purchase Request of ipad, please go to
+$role_name_before had approvaled a Purchase Request of XX, please go to
 http://guoa.dev.camplus.hk/pr/my-approval for approval.</br>
 
 The current status of this Purchase Request is Pending.</br>
 
-Thank you for your attention.</br>
-
-Camplus Purchase Request System",
-    'body' => "<p>just delvel info:Hello World rate_pr_action_email_to_next_role</p>",
+Thank you for your attention.</br>',
+    'body' => "<p>Hello World rate_pr_action_email_to_next_role</p>",
   );
   // The language of the e-mail. This will one of three values:
   // * user_preferred_language(): Used for sending mail to a particular website
