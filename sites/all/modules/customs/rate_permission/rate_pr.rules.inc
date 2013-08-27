@@ -153,12 +153,9 @@ function rete_pr_og_rules_add_entitys_to_group(EntityDrupalWrapper $entity, Enti
   }
   // og_group($group->type(), $group->getIdentifier(), $values);
 }
-
 /**
  * Condition packages_condition_packagetype
- * Email to specific addr when mixable/locked.
  */
-function rate_pr_action_email($node) {
   // 1|Draft
   // 2|Locked
   // 3|Pending
@@ -166,6 +163,10 @@ function rate_pr_action_email($node) {
   // 5|Rejected
   // 6|Completed
   // 7|Cancelled
+function rate_pr_action_email($node) {
+   //Provide the the old answer as parameter to unflag?
+   //do something, no return.
+  // drupal_mail($module, $key, $to, $language, $params = array(), $from = NULL, $send = TRUE);
  if($node->field_pr_status[LANGUAGE_NONE][0]['value'] == '2') {
     watchdog('value==2', 'message', array(), WATCHDOG_NOTICE, 'link');
  }
@@ -259,15 +260,8 @@ function rate_pr_action_email_to_next_role($node) {
   // hook_mail(). In this case, we want to pass in the values the user entered
   // into the form, which include the message body in $form_values['message'].
   $params = array(
-    'subject' => "Purchase Request of ,your turns!",
-    'message' => 'Dear $role_name</br>
-
-$role_name_before had approvaled a Purchase Request of XX, please go to
-http://guoa.dev.camplus.hk/pr/my-approval for approval.</br>
-
-The current status of this Purchase Request is Pending.</br>
-
-Thank you for your attention.</br>',
+    'subject' => $node->title,
+    'message' => "<p>rate_pr_action_email_to_next_role</p>",
     'body' => "<p>Hello World rate_pr_action_email_to_next_role</p>",
   );
   // The language of the e-mail. This will one of three values:
