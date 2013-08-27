@@ -259,7 +259,7 @@ function rate_pr_action_email_to_next_role($node) {
   // hook_mail(). In this case, we want to pass in the values the user entered
   // into the form, which include the message body in $form_values['message'].
   $params = array(
-    'subject' => "Purchase Request of $node->title ,your turns!",
+    'subject' => "Purchase Request of ,your turns!",
     'message' => 'Dear $role_name</br>
 
 $role_name_before had approvaled a Purchase Request of XX, please go to
