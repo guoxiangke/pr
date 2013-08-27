@@ -262,7 +262,6 @@ function rate_pr_action_email_to_next_role($node) {
   $params = array(
     'subject' => $node->title,
     'message' => "<p>rate_pr_action_email_to_next_role</p>",
-    'body' => "<p>Hello World rate_pr_action_email_to_next_role</p>",
   );
   // The language of the e-mail. This will one of three values:
   // * user_preferred_language(): Used for sending mail to a particular website
