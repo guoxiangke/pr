@@ -164,10 +164,11 @@ function camplus_pr_undraft($node) {
     // $node->field_pr_author[LANGUAGE_NONE][0]['target_id'] = $tempuid;
   }
   //add role after value begin
-    dpm($total,'total');
+
     $camplus_pr_range_settings = variable_get('camplus_pr_range_settings');
-    global $debug;
-    if($debug) dpm($camplus_pr_range_settings,'$camplus_pr_range_settings');
+    // global $debug; 
+    // dpm($total,'total');
+    // if($debug) dpm($camplus_pr_range_settings,'$camplus_pr_range_settings');
     foreach ($camplus_pr_range_settings as $key => $value) {
       if($value['end']-$total >= 0) {
         $approve_rang = $key; //the $key+1 group settings.
@@ -924,6 +925,8 @@ function camplus_pr_flag_access($flag, $content_id, $action, $account) {
  * 获取预算基本信息
  */
 function get_bis_info($node) {
+  //dpm('get_bis_info','get_bis_info');
+  //TODO://
   global $debug;
   if(is_numeric($node)) {
     $budget_nid = $node;

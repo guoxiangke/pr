@@ -249,7 +249,7 @@ function rate_pr_action_email_to_next_role($node) {
     }
   // _rate_pr_check_permissions end
 
-  $next_rid = $workflow_settings_node[$approve_status['approved_counts']+1];
+  $next_rid = $workflow_settings_node[$approve_status['approved_counts']+1]?$workflow_settings_node[$approve_status['approved_counts']+1]:0;
   // $rids = implode(',', $role_involved);
   $result = db_query('SELECT DISTINCT u.mail FROM {users} u INNER JOIN {users_roles} r ON u.uid = r.uid WHERE r.rid = '.$next_rid);
   watchdog('next_rid', $next_rid, array(), WATCHDOG_NOTICE, 'link');

@@ -733,16 +733,17 @@ function theme_camplus_pr_budget_settings_form($variables) {
           $data[] = '0.00%';
         }
         if(arg(1)!='my_budget_report') {
+          $mixable_amount = get_bi_mixable_amount($gid);
           if(isset($node->field_mixable_key[LANGUAGE_NONE])) {
             $row[] = $node->field_mixable_key[LANGUAGE_NONE][0]['value'];
             $data[] = $node->field_mixable_key[LANGUAGE_NONE][0]['value'];
-            $row[] = get_bi_mixable_amount($gid).'*';//'通用余额';
-            $data[] = get_bi_mixable_amount($gid);//'通用余额';
+            $row[] = $mixable_amount.'*';//'通用余额';
+            $data[] = $mixable_amount;//'通用余额';
           }else{
             $row[] = '-';
             $data[] = '-';
-            $row[] = get_bi_mixable_amount($gid);//'通用余额';
-            $data[] = get_bi_mixable_amount($gid);//'通用余额';
+            $row[] = $mixable_amount;//'通用余额';
+            $data[] = $mixable_amount;//'通用余额';
           }
         }
 
