@@ -182,14 +182,17 @@ function camplus_pr_undraft($node) {
     $workflow_settings_node = $workflow_settings[$approve_rang];  
     $node->field_pr_role_involved[LANGUAGE_NONE][0]['value'] = serialize($workflow_settings_node);
     // dpm($workflow_settings_node,'$workflow_settings_node2');
-    // $workflow_settings_node = array_filter($workflow_settings_node);
+    $workflow_settings_node = array_filter($workflow_settings_node);
 
-    // $workflow_settings_node = array_keys($workflow_settings_node);
-    // // dpm($workflow_settings_node,'$workflow_settings_node');
-    // if(isset($workflow_settings_node[1])){
-    //   //[0] IS THE HEADer 
-    //   $node->field_pr_rid_after[LANGUAGE_NONE][0]['value'] = $workflow_settings_node[1];
-    // }
+    $workflow_settings_node = array_keys($workflow_settings_node);
+    // dpm($workflow_settings_node,'$workflow_settings_node');
+    if(isset($workflow_settings_node[1])){
+      //0 5 header
+      //1 6 manager
+      //2 7 principal
+      //3 8 borad
+      $node->field_pr_rid_after[LANGUAGE_NONE][0]['value'] = $workflow_settings_node[1];//6
+    }
     // dpm($node,'123');
   //end
 
