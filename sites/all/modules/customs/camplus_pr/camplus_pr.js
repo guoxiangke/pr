@@ -16,9 +16,9 @@
  			$('#edit-field-pr-for-tender-und').change(function() {
 			     if(this.checked) {
 			         // do something when checked
-			        $('#fgm_node_purchase_request_form_group_ref_supplier_tender-add-more-wrapper').slideUp();
+			        $('#fgm_node_purchase_request_form_group_ref_supplier-add-more-wrapper').slideUp();
 			     }else {
-			     	$('#fgm_node_purchase_request_form_group_ref_supplier_tender-add-more-wrapper').slideDown();
+			     	$('#fgm_node_purchase_request_form_group_ref_supplier-add-more-wrapper').slideDown();
 			     }
 			 });
 	Drupal.behaviors.pr = {

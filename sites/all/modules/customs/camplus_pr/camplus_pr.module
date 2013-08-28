@@ -373,7 +373,6 @@ function camplus_pr_form_alter(&$form, &$form_state, $form_id) {
       $description .= 'HK$'.$value['begin'] .'-'. $value['end']  . ': ' .$str1. ' ' .$str2 . ' ' .$str3 .'<br/>';
     }
     $form['fgm_node_purchase_request_form_group_ref_supplier']['fields']['#description'] = $description;
-    $form['fgm_node_purchase_request_form_group_ref_supplier_tender']['fields']['#description'] = $description;
     
 
     $form['field_pr_status']['#access'] = FALSE;
@@ -539,7 +538,7 @@ function purchase_request_node_form_validate($form, &$form_state) {
     
     //['field_pr_quotation_file'][LANGUAGE_NONE][0]['fid']
     // $chosen_price = $total + $form_state['input']['field_payment_from_students'][LANGUAGE_NONE][0]['value'];
-    if(!strlen($form_state['input']['field_lower_price_remark'][LANGUAGE_NONE][0]['value']) && $camplus_pr_file_settings["pr_quo_file_no_$approve_rang"] > 0 && $form_state['values']['field_pr_sole_supplier'][LANGUAGE_NONE][0]['value'] != 1)
+    if(!strlen($form_state['input']['field_lower_price_remark'][LANGUAGE_NONE][0]['value']) && $camplus_pr_file_settings["pr_quo_file_no_$approve_rang"] > 0 && $form_state['values']['field_pr_sole_supplier'][LANGUAGE_NONE][0]['value'] != 1 && $form_state['values']['field_pr_for_tender'][LANGUAGE_NONE][0]['value'] != 1)
     foreach ($form_state['input']['fgm_node_purchase_request_form_group_ref_supplier']['fields']['items'] as $key => $referenced) {
       if($chosen_price > $referenced['field_referenced_price'][LANGUAGE_NONE]['value']) {
         form_set_error('fgm_node_purchase_request_form_group_chosen[fields][items][0][field_chosen_price][und][value]', t('Your quoted reference price is smaller than the price from chosen supplier, you must specify reason.
@@ -547,7 +546,7 @@ function purchase_request_node_form_validate($form, &$form_state) {
       }
     }
 
-    if($pr_ref_file_require && $form_state['values']['field_pr_sole_supplier'][LANGUAGE_NONE][0]['value'] != 1) {
+    if($pr_ref_file_require && $form_state['values']['field_pr_sole_supplier'][LANGUAGE_NONE][0]['value'] != 1 && $form_state['values']['field_pr_for_tender'][LANGUAGE_NONE][0]['value'] != 1) {
       foreach ($form_state['input']['fgm_node_purchase_request_form_group_ref_supplier']['fields']['items'] as $key => $fields) {
         foreach ($fields as $field_name => $value) {
           if($field_name == 'field_pr_ref_quotation_file') {
@@ -559,7 +558,7 @@ function purchase_request_node_form_validate($form, &$form_state) {
       }
     }
 
-    if($pr_quo_file_no != 0 && $form_state['values']['field_pr_sole_supplier'][LANGUAGE_NONE][0]['value'] != 1) 
+    if($pr_quo_file_no != 0 && $form_state['values']['field_pr_sole_supplier'][LANGUAGE_NONE][0]['value'] != 1 && $form_state['values']['field_pr_for_tender'][LANGUAGE_NONE][0]['value'] != 1) 
     foreach ($form_state['input']['fgm_node_purchase_request_form_group_ref_supplier']['fields']['items'] as $key => $fields) {
       foreach ($fields as $field_name => $value) {
         if($field_name != 'field_pr_ref_quotation_file') {
@@ -572,56 +571,56 @@ function purchase_request_node_form_validate($form, &$form_state) {
         }
       }
     }
-    if($pr_quo_file_no != 0 && $form_state['values']['field_pr_sole_supplier'][LANGUAGE_NONE][0]['value'] != 1 && $pr_quo_file_no > count($form_state['input']['fgm_node_purchase_request_form_group_ref_supplier']['fields']['items']) ) {
+    if($pr_quo_file_no != 0 && $form_state['values']['field_pr_sole_supplier'][LANGUAGE_NONE][0]['value'] != 1  && $form_state['values']['field_pr_for_tender'][LANGUAGE_NONE][0]['value'] != 1 && $pr_quo_file_no > count($form_state['input']['fgm_node_purchase_request_form_group_ref_supplier']['fields']['items']) ) {
       form_set_error('field_budget_items_amount', t('You MUST upload  '.$pr_quo_file_no .' quotation file(s) from the Reference Supplier!'));
     }
     //tender begin fgm_node_purchase_request_form_group_ref_supplier_tender
-    if(!strlen($form_state['input']['field_lower_price_remark'][LANGUAGE_NONE][0]['value']) && $camplus_pr_file_settings["pr_quo_file_no_$approve_rang"] > 0 && $form_state['values']['field_pr_for_tender'][LANGUAGE_NONE][0]['value'] != 1)
-    foreach ($form_state['input']['fgm_node_purchase_request_form_group_ref_supplier_tender']['fields']['items'] as $key => $referenced) {
-      if($chosen_price > $referenced['field_reference_price_tender'][LANGUAGE_NONE]['value']) {
-        form_set_error('field_reference_price_tender', t('Your quoted reference price is smaller than the price from chosen supplier, you must specify reason.
-'));//$field_name.
-      }
-    }
+//     if(!strlen($form_state['input']['field_lower_price_remark'][LANGUAGE_NONE][0]['value']) && $camplus_pr_file_settings["pr_quo_file_no_$approve_rang"] > 0 && $form_state['values']['field_pr_for_tender'][LANGUAGE_NONE][0]['value'] != 1)
+//     foreach ($form_state['input']['fgm_node_purchase_request_form_group_ref_supplier_tender']['fields']['items'] as $key => $referenced) {
+//       if($chosen_price > $referenced['field_reference_price_tender'][LANGUAGE_NONE]['value']) {
+//         form_set_error('field_reference_price_tender', t('Your quoted reference price is smaller than the price from chosen supplier, you must specify reason.
+// '));//$field_name.
+//       }
+//     }
 
-    if($pr_ref_file_require && $form_state['values']['field_pr_for_tender'][LANGUAGE_NONE][0]['value'] != 1) {
-      foreach ($form_state['input']['fgm_node_purchase_request_form_group_ref_supplier_tender']['fields']['items'] as $key => $fields) {
-        foreach ($fields as $field_name => $value) {
-          if($field_name == 'field_ref_quotation_file_tender') {
-            if(!isset($value[LANGUAGE_NONE][0]['fid'])) {
-               form_set_error('', t('Reference Supplier Quotation file required! for tender'));
-            };
-          }
-        }
-      }
-    }
+//     if($pr_ref_file_require && $form_state['values']['field_pr_for_tender'][LANGUAGE_NONE][0]['value'] != 1) {
+//       foreach ($form_state['input']['fgm_node_purchase_request_form_group_ref_supplier_tender']['fields']['items'] as $key => $fields) {
+//         foreach ($fields as $field_name => $value) {
+//           if($field_name == 'field_ref_quotation_file_tender') {
+//             if(!isset($value[LANGUAGE_NONE][0]['fid'])) {
+//                form_set_error('', t('Reference Supplier Quotation file required! for tender'));
+//             };
+//           }
+//         }
+//       }
+//     }
 
-    if($pr_quo_file_no != 0 && $form_state['values']['field_pr_for_tender'][LANGUAGE_NONE][0]['value'] != 1) 
-    foreach ($form_state['input']['fgm_node_purchase_request_form_group_ref_supplier_tender']['fields']['items'] as $key => $fields) {
-      foreach ($fields as $field_name => $value) {
-        if($field_name != 'field_ref_quotation_file_tender') {
-          if(empty($value[LANGUAGE_NONE]['value'])){
-            // dpm( $field_name.t('must have value'));
-             form_set_error('', t('You need to provide reference supplier(s) information as well. for tender'));//$field_name.
-          };
-        }else {
+//     if($pr_quo_file_no != 0 && $form_state['values']['field_pr_for_tender'][LANGUAGE_NONE][0]['value'] != 1) 
+//     foreach ($form_state['input']['fgm_node_purchase_request_form_group_ref_supplier_tender']['fields']['items'] as $key => $fields) {
+//       foreach ($fields as $field_name => $value) {
+//         if($field_name != 'field_ref_quotation_file_tender') {
+//           if(empty($value[LANGUAGE_NONE]['value'])){
+//             // dpm( $field_name.t('must have value'));
+//              form_set_error('', t('You need to provide reference supplier(s) information as well. for tender'));//$field_name.
+//           };
+//         }else {
 
-        }
-      }
-    }
-    // dpm($pr_quo_file_no,'$pr_quo_file_no');
-    // dpm($form_state['values']['field_pr_for_tender'][LANGUAGE_NONE][0]['value'] ,'field_pr_for_tender');
-    // dpm( $pr_quo_file_no,' $pr_quo_file_no');
-    if($pr_quo_file_no != 0 && $form_state['values']['field_pr_for_tender'][LANGUAGE_NONE][0]['value'] != 1 ) {
-      foreach ($form_state['input']['fgm_node_purchase_request_form_group_ref_supplier_tender']['fields']['items'] as $key => $value) {
-        if($value['field_ref_quotation_file_tender'][LANGUAGE_NONE][0]['fid'] == '0') {
-           form_set_error('field_budget_items_amount', t('You MUST upload quotation file(s) from the Reference Supplier! for tender0000'));
-        }
-      }
-      if($pr_quo_file_no > count($form_state['input']['fgm_node_purchase_request_form_group_ref_supplier_tender']['fields']['items'])) {
-        form_set_error('field_budget_items_amount', t('You MUST upload  '.$pr_quo_file_no .' quotation file(s) from the Reference Supplier! for tender')); 
-      }
-    }
+//         }
+//       }
+//     }
+//     // dpm($pr_quo_file_no,'$pr_quo_file_no');
+//     // dpm($form_state['values']['field_pr_for_tender'][LANGUAGE_NONE][0]['value'] ,'field_pr_for_tender');
+//     // dpm( $pr_quo_file_no,' $pr_quo_file_no');
+//     if($pr_quo_file_no != 0 && $form_state['values']['field_pr_for_tender'][LANGUAGE_NONE][0]['value'] != 1 ) {
+//       foreach ($form_state['input']['fgm_node_purchase_request_form_group_ref_supplier_tender']['fields']['items'] as $key => $value) {
+//         if($value['field_ref_quotation_file_tender'][LANGUAGE_NONE][0]['fid'] == '0') {
+//            form_set_error('field_budget_items_amount', t('You MUST upload quotation file(s) from the Reference Supplier! for tender0000'));
+//         }
+//       }
+//       if($pr_quo_file_no > count($form_state['input']['fgm_node_purchase_request_form_group_ref_supplier_tender']['fields']['items'])) {
+//         form_set_error('field_budget_items_amount', t('You MUST upload  '.$pr_quo_file_no .' quotation file(s) from the Reference Supplier! for tender')); 
+//       }
+//     }
     // dpm($form_state);
     // form_set_error('field_budget_items_amount', t('!!!!!'));
     //tender end
