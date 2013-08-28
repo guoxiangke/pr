@@ -155,6 +155,7 @@ function rete_pr_og_rules_add_entitys_to_group(EntityDrupalWrapper $entity, Enti
 }
 /**
  * Condition packages_condition_packagetype
+ * 1.Email to specific addr when mixable/locked.
  */
   // 1|Draft
   // 2|Locked
@@ -185,8 +186,8 @@ function rate_pr_action_email($node) {
   // into the form, which include the message body in $form_values['message'].
   $params = array(
     'subject' => $node->title,
-    'message' => "<p>Hello World</p>",
-    'body' => "<p>Hello World</p>",
+    'message' => "<p>locked</p>",
+    'body' => "<p>Hello locked</p>",
   );
   // The language of the e-mail. This will one of three values:
   // * user_preferred_language(): Used for sending mail to a particular website
@@ -285,10 +286,11 @@ function rate_pr_action_email_to_next_role($node) {
   // Send the mail, and check for success. Note that this does not guarantee
   // message delivery; only that there were no PHP-related issues encountered
   // while sending.
+  $module = 'rate_pr';
   $message = array('result' => TRUE);
   foreach ($result as $row) {
     watchdog('$row->mail', $row->mail, array(), WATCHDOG_NOTICE, 'link');
-    $message = drupal_mail('rules', $key, $row->mail, language_default(), $params, $from);
+    $message = drupal_mail($module, $key, $row->mail, language_default(), $params, $from);
     if (!$message['result']) {
       break;
     }
