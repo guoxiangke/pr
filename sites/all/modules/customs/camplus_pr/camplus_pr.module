@@ -375,8 +375,7 @@ function camplus_pr_form_alter(&$form, &$form_state, $form_id) {
     $form['fgm_node_purchase_request_form_group_ref_supplier']['fields']['#description'] = $description;
     $form['fgm_node_purchase_request_form_group_ref_supplier_tender']['fields']['#description'] = $description;
     
-   dpm($form);
-   dpm($form_state);
+
     $form['field_pr_status']['#access'] = FALSE;
     $form['field_pr_staff']['#access'] = FALSE;
     $form['field_voucher_no']['#access'] = FALSE;
@@ -633,8 +632,8 @@ function purchase_request_node_form_validate($form, &$form_state) {
     if(form_get_errors()) {
       return;
     }
-    dpm($form_state);
-    form_set_error('field_budget_items_amount', t('!!!!!!!!'));
+    // dpm($form_state);
+    // form_set_error('field_budget_items_amount', t('!!!!!!!!'));
  //    drupal_set_message(t('This Application has not yet been submitted for Apporval Process.
  // <br>Reminded that, due to submission(s) by others, the Applicable Balance may change when you "Submit".'), 'warning', FALSE);
 
