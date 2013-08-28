@@ -63,7 +63,7 @@ $feed_back_buttons = '<div class="pr-rate-buttons">
       if($widget->name == 'approve') {
         $rate_results = rate_get_results('node', $content_id, $widget->id);
         if(isset($rate_results['user_vote'])) {
-          // $feed_back_buttons = '';
+          $feed_back_buttons = '';
         }
         break;
       }
