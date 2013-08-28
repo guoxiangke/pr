@@ -38,19 +38,19 @@
  * - $info: String with user readable information (built in preprocess function).
  */
 $feed_back_title = $info?$info:$display_options['description'];
-$feed_back_buttons = '<div class="qa-userful-buttons">
-  <span class = "qa-useful">
+$feed_back_buttons = '<div class="pr-rate-buttons">
+  <span class = "pr-rate">
      '.theme('rate_button', array(
       'text' => $links[0]['text'],
       'href' => $links[0]['href'],
-      'class' => "qa-useful-yes")
+      'class' => "approve-btn")
     ).'
   </span>
-  <span class = "qa-useful">
+  <span class = "pr-rate">
     '.theme('rate_button', array(
       'text' => $links[1]['text'],
       'href' => $links[1]['href'],
-      'class' => "qa-useful-no")
+      'class' => "disapprove-btn")
     ).'
   </span>
 </div>';
@@ -63,7 +63,7 @@ $feed_back_buttons = '<div class="qa-userful-buttons">
       if($widget->name == 'approve') {
         $rate_results = rate_get_results('node', $content_id, $widget->id);
         if(isset($rate_results['user_vote'])) {
-          $feed_back_buttons = '';
+          // $feed_back_buttons = '';
         }
         break;
       }
@@ -77,7 +77,7 @@ $feed_back_buttons = '<div class="qa-userful-buttons">
   
 <?php endif; ?>
 
-<a class="fed_button btn btn-mini btn-link"   data-content='<?//php print $feed_back_buttons; ?>'><?php print $feed_back_title;?></a>
+<p class="fed_button btn btn-mini btn-link"><?php print $feed_back_title;?></p>
 
 <?php print $feed_back_buttons; ?>
 
