@@ -373,6 +373,10 @@ function camplus_pr_form_alter(&$form, &$form_state, $form_id) {
       $description .= 'HK$'.$value['begin'] .'-'. $value['end']  . ': ' .$str1. ' ' .$str2 . ' ' .$str3 .'<br/>';
     }
     $form['fgm_node_purchase_request_form_group_ref_supplier']['fields']['#description'] = $description;
+    $form['fgm_node_purchase_request_form_group_ref_supplier_tender']['fields']['#description'] = $description;
+    
+   dpm($form);
+   dpm($form_state);
     $form['field_pr_status']['#access'] = FALSE;
     $form['field_pr_staff']['#access'] = FALSE;
     $form['field_voucher_no']['#access'] = FALSE;
@@ -572,7 +576,44 @@ function purchase_request_node_form_validate($form, &$form_state) {
     if($pr_quo_file_no != 0 && $form_state['values']['field_pr_sole_supplier'][LANGUAGE_NONE][0]['value'] != 1 && $pr_quo_file_no > count($form_state['input']['fgm_node_purchase_request_form_group_ref_supplier']['fields']['items']) ) {
       form_set_error('field_budget_items_amount', t('You MUST upload  '.$pr_quo_file_no .' quotation file(s) from the Reference Supplier!'));
     }
+    //tender begin fgm_node_purchase_request_form_group_ref_supplier_tender
+    if(!strlen($form_state['input']['field_lower_price_remark'][LANGUAGE_NONE][0]['value']) && $camplus_pr_file_settings["pr_quo_file_no_$approve_rang"] > 0 && $form_state['values']['field_pr_for_tender'][LANGUAGE_NONE][0]['value'] != 1)
+    foreach ($form_state['input']['fgm_node_purchase_request_form_group_ref_supplier_tender']['fields']['items'] as $key => $referenced) {
+      if($chosen_price > $referenced['field_reference_price_tender'][LANGUAGE_NONE]['value']) {
+        form_set_error('field_reference_price_tender', t('Your quoted reference price is smaller than the price from chosen supplier, you must specify reason.
+'));//$field_name.
+      }
+    }
 
+    if($pr_ref_file_require && $form_state['values']['field_pr_for_tender'][LANGUAGE_NONE][0]['value'] != 1) {
+      foreach ($form_state['input']['fgm_node_purchase_request_form_group_ref_supplier_tender']['fields']['items'] as $key => $fields) {
+        foreach ($fields as $field_name => $value) {
+          if($field_name == 'field_ref_quotation_file_tender') {
+            if(!isset($value[LANGUAGE_NONE][0]['fid'])) {
+               form_set_error('', t('Reference Supplier Quotation file required! for tender'));
+            };
+          }
+        }
+      }
+    }
+
+    if($pr_quo_file_no != 0 && $form_state['values']['field_pr_for_tender'][LANGUAGE_NONE][0]['value'] != 1) 
+    foreach ($form_state['input']['fgm_node_purchase_request_form_group_ref_supplier_tender']['fields']['items'] as $key => $fields) {
+      foreach ($fields as $field_name => $value) {
+        if($field_name != 'field_ref_quotation_file_tender') {
+          if(empty($value[LANGUAGE_NONE]['value'])){
+            // dpm( $field_name.t('must have value'));
+             form_set_error('', t('You need to provide reference supplier(s) information as well. for tender'));//$field_name.
+          };
+        }else {
+
+        }
+      }
+    }
+    if($pr_quo_file_no != 0 && $form_state['values']['field_pr_for_tender'][LANGUAGE_NONE][0]['value'] != 1 && $pr_quo_file_no > count($form_state['input']['fgm_node_purchase_request_form_group_ref_supplier_tender']['fields']['items']) ) {
+      form_set_error('field_budget_items_amount', t('You MUST upload  '.$pr_quo_file_no .' quotation file(s) from the Reference Supplier! for tender'));
+    }
+    //tender end
 
     // set field_pr_staff  == current user;
     global $user;
@@ -592,6 +633,8 @@ function purchase_request_node_form_validate($form, &$form_state) {
     if(form_get_errors()) {
       return;
     }
+    dpm($form_state);
+    form_set_error('field_budget_items_amount', t('!!!!!!!!'));
  //    drupal_set_message(t('This Application has not yet been submitted for Apporval Process.
  // <br>Reminded that, due to submission(s) by others, the Applicable Balance may change when you "Submit".'), 'warning', FALSE);
 
