@@ -381,7 +381,7 @@ function camplus_pr_form_alter(&$form, &$form_state, $form_id) {
     $form['field_voucher_no']['#access'] = FALSE;
     $form['og_group_ref']['#access'] = FALSE;
     $form['field_pr_reference']['#access'] = FALSE;
-    // dpm();
+
   }
   //if not open mixable key, == not Enable Budget Pool, hide the field
   //@see node_view & purchase_request_node_form_validate()
@@ -609,9 +609,21 @@ function purchase_request_node_form_validate($form, &$form_state) {
         }
       }
     }
-    if($pr_quo_file_no != 0 && $form_state['values']['field_pr_for_tender'][LANGUAGE_NONE][0]['value'] != 1 && $pr_quo_file_no > count($form_state['input']['fgm_node_purchase_request_form_group_ref_supplier_tender']['fields']['items']) ) {
-      form_set_error('field_budget_items_amount', t('You MUST upload  '.$pr_quo_file_no .' quotation file(s) from the Reference Supplier! for tender'));
+    // dpm($pr_quo_file_no,'$pr_quo_file_no');
+    // dpm($form_state['values']['field_pr_for_tender'][LANGUAGE_NONE][0]['value'] ,'field_pr_for_tender');
+    // dpm( $pr_quo_file_no,' $pr_quo_file_no');
+    if($pr_quo_file_no != 0 && $form_state['values']['field_pr_for_tender'][LANGUAGE_NONE][0]['value'] != 1 ) {
+      foreach ($form_state['input']['fgm_node_purchase_request_form_group_ref_supplier_tender']['fields']['items'] as $key => $value) {
+        if($value['field_ref_quotation_file_tender'][LANGUAGE_NONE][0]['fid'] == '0') {
+           form_set_error('field_budget_items_amount', t('You MUST upload quotation file(s) from the Reference Supplier! for tender0000'));
+        }
+      }
+      if($pr_quo_file_no > count($form_state['input']['fgm_node_purchase_request_form_group_ref_supplier_tender']['fields']['items'])) {
+        form_set_error('field_budget_items_amount', t('You MUST upload  '.$pr_quo_file_no .' quotation file(s) from the Reference Supplier! for tender')); 
+      }
     }
+    // dpm($form_state);
+    // form_set_error('field_budget_items_amount', t('!!!!!'));
     //tender end
 
     // set field_pr_staff  == current user;
