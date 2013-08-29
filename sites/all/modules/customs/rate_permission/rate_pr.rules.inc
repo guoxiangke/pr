@@ -187,8 +187,8 @@ function rate_pr_action_email($node) {
   // into the form, which include the message body in $form_values['message'].
   $params = array(
     'subject' => $node->title,
-    'message' => "<p>locked</p>",
-    'body' => "<p>Hello locked</p>",
+    'message' => "The purchase request of $node->title is locked. Please go to ".url(NULL, array('absolute' => TRUE)) . (variable_get('clean_url', 0) ? '' : '?q=pr/locked')." to review it.",
+    'body' => "The purchase request of $node->title is locked. Please go to ".url(NULL, array('absolute' => TRUE)) . (variable_get('clean_url', 0) ? '' : '?q=pr/locked')." to review it.",
   );
   // The language of the e-mail. This will one of three values:
   // * user_preferred_language(): Used for sending mail to a particular website
