@@ -1168,53 +1168,68 @@ function get_bis_info_all($budget_nid) {
 function camplus_pr_views_pre_render(&$view) {
   global $user;
   $camplus_pr_approvable_role_involved = variable_get('camplus_pr_approvable_role_involved','');
-  if(!($view->name == 'purchase_request_list' && $view->current_display == 'pr_approval')) return;
+  // if(!($view->name == 'purchase_request_list' && $view->current_display == 'pr_approval')) return;
+  if($view->name == 'purchase_request_list') {
+    switch ($view->current_display) {
+      case 'pr_approval':
+         
+            $unset = FALSE;
+            foreach ($camplus_pr_approvable_role_involved as $key => $value) {
+              //是否有审核权限
+              if($value && in_array($key, $user->roles)) {
+                $unset = TRUE;
+              }
+            }
+            //如果我不在审核队列，全部unset
+            if(!$unset){
+              // dpm('如果我不在审核队列，全部unset');
+              $view->result = array();
+            }
+            foreach ($view->result as $key => $value) {
+            //所有等待我处理的PRs
+              $node = node_load($value->nid);   //pr node
+              // if($node->status == 0) {echo  'Draft'; return;}
+              $show_flag = TRUE;
+              $flags = flag_get_counts('node', $node->nid, $reset = FALSE);
+              if(isset($flags['paid']) && $flags['paid']) {
+                $show_flag = FALSE;
+              }
 
-
-  $unset = FALSE;
-  foreach ($camplus_pr_approvable_role_involved as $key => $value) {
-    //是否有审核权限
-    if($value && in_array($key, $user->roles)) {
-      $unset = TRUE;
-    }
-  }
-  //如果我不在审核队列，全部unset
-  if(!$unset){
-    // dpm('如果我不在审核队列，全部unset');
-    $view->result = array();
-  }
-  foreach ($view->result as $key => $value) {
-  //所有等待我处理的PRs
-    $node = node_load($value->nid);   //pr node
-    // if($node->status == 0) {echo  'Draft'; return;}
-    $show_flag = TRUE;
-    $flags = flag_get_counts('node', $node->nid, $reset = FALSE);
-    if(isset($flags['paid']) && $flags['paid']) {
-      $show_flag = FALSE;
-    }
-
-    $widgets = rate_get_active_widgets('node', $node->type);
-    foreach ($widgets as $widget_id => $widget) {
-      //没有权限时，清楚rate
-      $widget->id = $widget_id;
-      if($widget->name == 'approve') {
-        $approve_status = _rate_pr_check_permissions($node,$widget);
-        // dpm ($approve_status['workflow_status']);
-        //等待penging
-        if($approve_status['workflow_status'] != 'pending' && !camplus_pr_get_vote($node)) unset($view->result[$key]);
-        //等待我 TODO
-        //todo: 
-        // unset rate widget 如果我的上一级部门没有审核的话，在views里不显示。可以用veiws template实现，
-        //如果$approve_status['permit_flag'] = FALSE; 则不显示
-        if(!$approve_status['permit_flag'] || !$show_flag) {
-            // 根据PR节点的总额确定which审批流程
-            // 在上一个审批流程没有确定前 其他后续
-           unset($view->result[$key]);
+              $widgets = rate_get_active_widgets('node', $node->type);
+              foreach ($widgets as $widget_id => $widget) {
+                //没有权限时，清楚rate
+                $widget->id = $widget_id;
+                if($widget->name == 'approve') {
+                  $approve_status = _rate_pr_check_permissions($node,$widget);
+                  // dpm ($approve_status['workflow_status']);
+                  //等待penging
+                  if($approve_status['workflow_status'] != 'pending' && !camplus_pr_get_vote($node)) unset($view->result[$key]);
+                  //等待我 TODO
+                  //todo: 
+                  // unset rate widget 如果我的上一级部门没有审核的话，在views里不显示。可以用veiws template实现，
+                  //如果$approve_status['permit_flag'] = FALSE; 则不显示
+                  if(!$approve_status['permit_flag'] || !$show_flag) {
+                      // 根据PR节点的总额确定which审批流程
+                      // 在上一个审批流程没有确定前 其他后续
+                     unset($view->result[$key]);
+                    }
+                  }                
+                  break;
+                }
+              }
+          foreach ($view->result as $key => $value) {
+            $node = node_load($value->nid);   //pr node
+            if(camplus_pr_get_vote($node)) {
+              unset($view->result[$key]);
+            }
           }
-        }                
         break;
-      }
+      
+      default:
+        break;
     }
+  }
+
   // dpm($view);
   //   dpm($user->roles);
   //   dpm($camplus_pr_approvable_role_involved);
