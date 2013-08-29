@@ -673,15 +673,23 @@ function camplus_pr_field_widget_form_alter(&$element, &$form_state, $context) {
   }
 }
 function form_process_field_budget_items(&$element) {
+    // if($element['#id'] == 'edit-field-budget-items-und') {
     if(strpos($element['#id'], 'field-budget-items-und')  !== FALSE ) {
         //如果角色不是管理角色，只显示所属部门的子预算项目
         global $user;
+        $donext = TRUE;
         $rid = variable_get('camplus_pr_help_role', '6');
+         //filter~
+        if(in_array($rid, array_keys($user->roles))) {
+          if(variable_get('camplus_pr_help_staff_enable', '0')) {
+            $donext = FALSE;
+          }
+        }
+        if(!user_access('camplus budget cross sectoral') && $donext ) { 
 
-        if(!user_access('camplus budget cross sectoral') ||  in_array($rid, array_keys($user->roles))) { //
           // Load in the current user's group entity ID's
           $department = array();
-          if(!in_array($rid, array_keys($user->roles))) {
+          if(!in_array($rid, array_keys($user->roles)) ||(in_array($rid, array_keys($user->roles)) && !variable_get('camplus_pr_help_staff_enable', '0'))) {
             $groups = og_get_entity_groups();
             // Load the entities object ID's
             $nodes = node_load_multiple($groups['node']);
@@ -694,16 +702,15 @@ function form_process_field_budget_items(&$element) {
               }
             }
           }
-     
 
         $budget_items = $element['#options'];
-
         if(isset($budget_items) && is_array($budget_items))
         foreach ($budget_items as $budget_item_nid => $title) {
           $node = node_load($budget_item_nid);
           if(!$node) continue;
-          $element['#options'][$budget_item_nid] = $node->title . $node->body[LANGUAGE_NONE][0]['safe_value'];
-          // dpm($element);
+          $element['#options'][$budget_item_nid] = $node->title .' '. $node->body[LANGUAGE_NONE][0]['safe_value'];
+          
+         
           //去除不是当前学年的
           if(!isset($node->field_financial_year[LANGUAGE_NONE][0]['value']) || $node->field_financial_year[LANGUAGE_NONE][0]['value'] != camplus_pr_get_current_financial_year() ){
             //|| !in_array($node->field_parents_department[LANGUAGE_NONE][0]['target_id'], $department)
@@ -714,11 +721,11 @@ function form_process_field_budget_items(&$element) {
           if($bis_info['f'] <= 0) {
             unset($element['#options'][$budget_item_nid]); 
           }
-          $rid = variable_get('camplus_pr_help_role', '6');
-
-          if(in_array($rid, array_keys($user->roles))) {
+          
+          if(in_array($rid, array_keys($user->roles)) && variable_get('camplus_pr_help_staff_enable', '0')) {
             continue;
           }elseif(!in_array($node->field_parents_department[LANGUAGE_NONE][0]['target_id'], $department)){
+             // dpm($element['#options'][$budget_item_nid]);
             unset($element['#options'][$budget_item_nid]);
           }
           // if($bis_info['g'] == 0) {
@@ -730,14 +737,15 @@ function form_process_field_budget_items(&$element) {
           $element['#default_value'] = '_none';
 
         }
-      }else {
+      }
+      else {
         $budget_items = $element['#options'];
 
         if(isset($budget_items) && is_array($budget_items))
         foreach ($budget_items as $budget_item_nid => $title) {
           $node = node_load($budget_item_nid);
           if(!$node) continue;
-          $element['#options'][$budget_item_nid] = $node->title . $node->body[LANGUAGE_NONE][0]['safe_value'];
+          $element['#options'][$budget_item_nid] = $node->title .' '. $node->body[LANGUAGE_NONE][0]['safe_value'];
         }
       }
     }
